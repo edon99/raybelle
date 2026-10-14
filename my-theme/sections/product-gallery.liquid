@@ -1,0 +1,206 @@
+{% comment %}
+  Product gallery.
+
+  Shows the product several ways — the object, what comes with it, the result.
+  Without this the page talks about the product but never shows it more than
+  once, which reads as a brochure rather than a shop.
+
+  Each tile prefers, in order: a picked image, the product's own image at that
+  index, then a bundled demo asset. So it fills in on a fresh store and
+  upgrades automatically once real product photography is uploaded.
+{% endcomment %}
+
+{% liquid
+  assign product = section.settings.product | default: settings.featured_product
+  comment
+    Last resort: the store's first product. Without this, an unset "featured
+    product" means every buy control on the site renders nothing — the hero has
+    no Add to cart, the sticky bar does not appear, the closing CTA is empty,
+    and there is no route to the product page at all. Falling through to the
+    catalogue means the store sells something the moment it has something to
+    sell, and picking a featured product then overrides it.
+  endcomment
+  if product == blank
+    assign product = collections['all'].products.first
+  endif
+%}
+
+<div class="gallery band {{ section.settings.band }} band-pad full-width">
+  <div class="gallery__inner">
+    <header class="gallery__head reveal">
+      {% if section.settings.kicker != blank %}
+        <p class="eyebrow">{{ section.settings.kicker }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank %}
+        <h2 class="display section-title gallery__title">{{ section.settings.heading }}</h2>
+      {% endif %}
+    </header>
+
+    <div class="gallery__grid">
+      {% for block in section.blocks %}
+        {% liquid
+          assign media = block.settings.image
+          if media == blank and product != blank
+            assign index = forloop.index0
+            assign media = product.images[index]
+          endif
+        %}
+
+        <figure class="gallery__item reveal" {{ block.shopify_attributes }}>
+          <div class="gallery__frame">
+            {% if media != blank %}
+              {{
+                media
+                | image_url: width: 900
+                | image_tag: class: 'gallery__img', widths: '300,600,900', sizes: '(min-width: 900px) 30vw, 90vw', loading: 'lazy', alt: block.settings.caption
+              }}
+            {% elsif block.settings.demo_asset != blank %}
+              {% comment %} Bundled demo asset — see assets/DEMO-IMAGES.txt {% endcomment %}
+              <img
+                class="gallery__img"
+                src="{{ block.settings.demo_asset | asset_url }}"
+                alt="{{ block.settings.caption | escape }}"
+                width="900"
+                height="1125"
+                loading="lazy"
+              >
+            {% else %}
+              {{ 'product-2' | placeholder_svg_tag: 'gallery__img' }}
+            {% endif %}
+          </div>
+
+          {% if block.settings.caption != blank %}
+            <figcaption class="gallery__caption">{{ block.settings.caption }}</figcaption>
+          {% endif %}
+        </figure>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .gallery__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+    row-gap: var(--space-12);
+  }
+
+  .gallery__head,
+  .gallery__grid {
+    grid-column: 2;
+  }
+
+  .gallery__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .gallery__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    gap: var(--space-4);
+  }
+
+  .gallery__item {
+    margin: 0;
+  }
+
+  /* A tinted panel so a cut-out on white reads as a deliberate product tile. */
+  .gallery__frame {
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    aspect-ratio: 3 / 4;
+    border-radius: var(--radius-block);
+    background-color: var(--color-brand-3);
+  }
+
+  .gallery__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8%;
+    mix-blend-mode: multiply;
+  }
+
+  .gallery__caption {
+    margin-block-start: var(--space-3);
+    font-size: var(--text-sm);
+    opacity: 0.7;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.product_gallery",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "band",
+      "label": "t:labels.band",
+      "default": "band--page",
+      "options": [
+        { "value": "band--page", "label": "t:options.band.page" },
+        { "value": "band--surface", "label": "t:options.band.surface" },
+        { "value": "band--brand-1", "label": "t:options.band.brand_1" },
+        { "value": "band--brand-2", "label": "t:options.band.brand_2" },
+        { "value": "band--brand-3", "label": "t:options.band.brand_3" },
+        { "value": "band--ink", "label": "t:options.band.ink" }
+      ]
+    },
+    {
+      "type": "product",
+      "id": "product",
+      "label": "t:labels.product",
+      "info": "t:info.product_fallback"
+    },
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "t:labels.kicker",
+      "default": "A closer look"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:labels.heading",
+      "default": "Everything in the box"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "shot",
+      "name": "t:general.shot",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:labels.image",
+          "info": "t:info.gallery_image"
+        },
+        {
+          "type": "text",
+          "id": "demo_asset",
+          "label": "t:labels.demo_asset",
+          "info": "t:info.demo_asset"
+        },
+        {
+          "type": "text",
+          "id": "caption",
+          "label": "t:labels.caption"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.product_gallery",
+      "blocks": [
+        { "type": "shot", "settings": { "caption": "The machine" } },
+        { "type": "shot", "settings": { "caption": "What comes with it" } },
+        { "type": "shot", "settings": { "caption": "The result" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,173 @@
+{% comment %}
+  Infinite scrolling text band.
+
+  The phrase list is duplicated once and the track translates by exactly -50%,
+  which is what makes the loop seamless regardless of how many phrases the
+  merchant adds. The duplicate is `aria-hidden` so screen readers and search
+  engines see each phrase once.
+
+  The whole animation is suppressed by the global `prefers-reduced-motion`
+  rule in critical.css, leaving a static row of phrases.
+{% endcomment %}
+
+<div class="marquee band {{ section.settings.band }} full-width" data-speed="{{ section.settings.speed }}">
+  <div class="marquee__viewport">
+    <div class="marquee__track" style="--marquee-duration: {{ section.settings.speed }}s;">
+      {% for i in (1..2) %}
+        <ul
+          class="marquee__list"
+          {% unless forloop.first %}
+            aria-hidden="true"
+          {% endunless %}
+        >
+          {% for block in section.blocks %}
+            <li class="marquee__item" {{ block.shopify_attributes }}>
+              <span class="display marquee__text">{{ block.settings.text }}</span>
+              {% render 'icon', name: section.settings.separator, size: 12, class: 'marquee__sep' %}
+            </li>
+          {% else %}
+            <li class="marquee__item">
+              <span class="display marquee__text">{{ 'general.marquee_placeholder' | t }}</span>
+              {% render 'icon', name: section.settings.separator, size: 28, class: 'marquee__sep' %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .marquee {
+    padding-block: var(--space-4);
+    border-block: 1px solid var(--color-hairline);
+  }
+
+  .marquee__viewport {
+    overflow: hidden;
+  }
+
+  .marquee__track {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll var(--marquee-duration, 30s) linear infinite;
+  }
+
+  .marquee:hover .marquee__track {
+    animation-play-state: paused;
+  }
+
+  .marquee__list {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .marquee__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    padding-inline-end: var(--space-6);
+  }
+
+  /*
+   * A quiet ticker, not a shout: small letterspaced caps rather than the
+   * oversized display type a louder brand would use here.
+   */
+  .marquee__text {
+    font-size: var(--text-xs);
+    font-variation-settings: var(--label-variation);
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .marquee__sep {
+    opacity: 0.4;
+    color: var(--color-brand-1);
+  }
+
+  @keyframes marquee-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.marquee",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "band",
+      "label": "t:labels.band",
+      "default": "band--brand-1",
+      "options": [
+        { "value": "band--page", "label": "t:options.band.page" },
+        { "value": "band--surface", "label": "t:options.band.surface" },
+        { "value": "band--brand-1", "label": "t:options.band.brand_1" },
+        { "value": "band--brand-2", "label": "t:options.band.brand_2" },
+        { "value": "band--brand-3", "label": "t:options.band.brand_3" },
+        { "value": "band--ink", "label": "t:options.band.ink" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "min": 10,
+      "max": 90,
+      "step": 5,
+      "unit": "s",
+      "label": "t:labels.speed",
+      "info": "t:info.speed",
+      "default": 35
+    },
+    {
+      "type": "select",
+      "id": "separator",
+      "label": "t:labels.separator",
+      "default": "star",
+      "options": [
+        { "value": "star", "label": "t:options.icon.star" },
+        { "value": "sparkle", "label": "t:options.icon.sparkle" },
+        { "value": "bolt", "label": "t:options.icon.bolt" },
+        { "value": "cup", "label": "t:options.icon.cup" },
+        { "value": "check", "label": "t:options.icon.check" }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "phrase",
+      "name": "t:general.phrase",
+      "settings": [
+        {
+          "type": "text",
+          "id": "text",
+          "label": "t:labels.text",
+          "default": "brew anywhere"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.marquee",
+      "blocks": [
+        { "type": "phrase", "settings": { "text": "brew anywhere" } },
+        { "type": "phrase", "settings": { "text": "no outlet needed" } },
+        { "type": "phrase", "settings": { "text": "real espresso" } },
+        { "type": "phrase", "settings": { "text": "ten second rinse" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

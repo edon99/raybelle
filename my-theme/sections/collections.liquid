@@ -1,0 +1,160 @@
+{% comment %}
+  List of collections, for the list-collections template (/collections).
+
+  https://shopify.dev/docs/storefronts/themes/architecture/templates/collection
+{% endcomment %}
+
+<div class="clist band band--page band-pad full-width">
+  <div class="clist__inner">
+    <header class="clist__head">
+      <p class="eyebrow">{{ 'collections.browse' | t }}</p>
+      <h1 class="display section-title">{{ 'collections.title' | t }}</h1>
+    </header>
+
+    {% assign visible = collections | where: 'products_count' %}
+    {% if visible.size > 0 %}
+      <ul class="clist__grid" style="--min-col: {{ section.settings.min_column_width }}px;">
+        {% for collection in collections %}
+          {% if collection.products_count == 0 and section.settings.hide_empty %}
+            {% continue %}
+          {% endif %}
+
+          <li class="reveal">
+            <a class="ccard" href="{{ collection.url }}">
+              <span class="ccard__frame">
+                {% if collection.featured_image != blank %}
+                  {{
+                    collection.featured_image
+                    | image_url: width: 800
+                    | image_tag: class: 'ccard__img', widths: '200,400,600,800', sizes: '(min-width: 900px) 30vw, 45vw', loading: 'lazy', alt: ''
+                  }}
+                {% elsif collection.products.first.featured_image != blank %}
+                  {{
+                    collection.products.first.featured_image
+                    | image_url: width: 800
+                    | image_tag: class: 'ccard__img', widths: '200,400,600,800', sizes: '(min-width: 900px) 30vw, 45vw', loading: 'lazy', alt: ''
+                  }}
+                {% else %}
+                  {{ 'collection-1' | placeholder_svg_tag: 'ccard__img' }}
+                {% endif %}
+              </span>
+
+              <span class="ccard__body">
+                <span class="ccard__title">{{ collection.title }}</span>
+                <span class="ccard__count">
+                  {{ 'collections.count' | t: count: collection.products_count }}
+                </span>
+              </span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="lede">{{ 'collections.none' | t }}</p>
+    {% endif %}
+
+    <a class="btn btn--secondary clist__all" href="{{ routes.all_products_collection_url }}">
+      {{ 'collections.view_all_products' | t }}
+    </a>
+  </div>
+</div>
+
+{% stylesheet %}
+  .clist__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+    row-gap: var(--space-12);
+  }
+
+  .clist__head,
+  .clist__grid,
+  .clist__all,
+  .clist__inner > .lede {
+    grid-column: 2;
+  }
+
+  .clist__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(var(--min-col, 260px), 100%), 1fr));
+    gap: var(--space-8) var(--space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .clist__all {
+    justify-self: start;
+  }
+
+  .ccard {
+    display: grid;
+    gap: var(--space-4);
+    color: currentcolor;
+    text-decoration: none;
+  }
+
+  .ccard__frame {
+    display: block;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    background-color: var(--color-brand-3);
+  }
+
+  .ccard__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--dur-slow) var(--ease-out);
+  }
+
+  .ccard:hover .ccard__img {
+    transform: scale(1.03);
+  }
+
+  .ccard__body {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .ccard__title {
+    font-size: var(--text-lg);
+  }
+
+  .ccard:hover .ccard__title {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .ccard__count {
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.collections",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "range",
+      "id": "min_column_width",
+      "min": 180,
+      "max": 400,
+      "step": 10,
+      "unit": "px",
+      "label": "t:labels.min_column_width",
+      "info": "t:info.min_column_width",
+      "default": 260
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_empty",
+      "label": "t:labels.hide_empty",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

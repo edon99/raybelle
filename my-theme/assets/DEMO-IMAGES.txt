@@ -1,0 +1,21 @@
+Demo photography bundled with this theme.
+
+  product-machine.jpg      The machine, cropped from the supplied product shot
+  product-kit.jpg          The full supplied arrangement, squared up
+  demo-espresso-dark.jpg   Pexels 37756986
+  demo-crema.jpg           Pexels 21558662
+
+Pexels License: free for commercial use, no attribution required.
+
+The two demo-*.jpg files are coffee, not equipment. Earlier versions of this
+theme shipped stovetop moka-pot stock, which illustrated claims about a
+different object; those have been removed. Do not reintroduce photography of
+brewing equipment that is not this product.
+
+Both product crops come from one supplied photo in which the machine occupies
+only 195 x 599 px. They are cut at native resolution and never upscaled, which
+is why the hero caps the image at 560px wide. Displaying them larger makes them
+visibly soft. Real product photography is the fix.
+
+Every section prefers a picked image over these files, so uploading real
+photography in the theme editor replaces them with no code change.

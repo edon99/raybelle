@@ -1,0 +1,622 @@
+{% comment %}
+  Cart.
+
+  The theme's job ends at the Checkout button — Shopify hosts everything after
+  it, so this page is the last chance to reassure and to let quantities change
+  without friction.
+
+  Two columns on desktop with the summary sticky; one column on mobile with the
+  checkout button fixed to the bottom of the viewport.
+
+  Everything works without JavaScript: quantities are a real form that posts to
+  /cart with an Update button, and Remove is a plain link. The script only
+  removes the need to press Update.
+
+  https://shopify.dev/docs/storefronts/themes/architecture/templates/cart
+{% endcomment %}
+
+{% liquid
+  assign product = section.settings.product | default: settings.featured_product
+  comment
+    Last resort: the store's first product. Without this, an unset "featured
+    product" means every buy control on the site renders nothing — the hero has
+    no Add to cart, the sticky bar does not appear, the closing CTA is empty,
+    and there is no route to the product page at all. Falling through to the
+    catalogue means the store sells something the moment it has something to
+    sell, and picking a featured product then overrides it.
+  endcomment
+  if product == blank
+    assign product = collections['all'].products.first
+  endif
+  assign threshold = section.settings.free_shipping_threshold | times: 100
+  assign remaining = threshold | minus: cart.total_price
+%}
+
+<div class="cart band band--page band-pad full-width">
+  <div class="cart__inner">
+    <header class="cart__head">
+      <p class="eyebrow">{{ 'cart.eyebrow' | t }}</p>
+      <h1 class="display section-title">{{ 'cart.title' | t }}</h1>
+    </header>
+
+    {% if cart.item_count == 0 %}
+      <div class="cart__empty">
+        <p class="lede">{{ 'cart.empty' | t }}</p>
+        {% if product != blank %}
+          <a class="btn btn--primary" href="{{ product.url }}">{{ 'cart.start_shopping' | t }}</a>
+        {% else %}
+          <a class="btn btn--primary" href="{{ routes.all_products_collection_url }}">
+            {{ 'cart.start_shopping' | t }}
+          </a>
+        {% endif %}
+      </div>
+    {% else %}
+      {% form 'cart', cart, class: 'cart__form', novalidate: 'novalidate' %}
+        <div class="cart__layout">
+          <div class="cart__items">
+            <ul class="cart__list">
+              {% for item in cart.items %}
+                <li class="cart__item" data-cart-line="{{ forloop.index }}">
+                  <a class="cart__media" href="{{ item.url }}" tabindex="-1" aria-hidden="true">
+                    {% if item.image != blank %}
+                      {{
+                        item.image
+                        | image_url: width: 300
+                        | image_tag: class: 'cart__img', widths: '150,300', sizes: '96px', loading: 'lazy', alt: ''
+                      }}
+                    {% endif %}
+                  </a>
+
+                  <div class="cart__details">
+                    <a class="cart__title" href="{{ item.url }}">{{ item.product.title }}</a>
+
+                    {% unless item.product.has_only_default_variant %}
+                      <p class="cart__variant">{{ item.variant.title }}</p>
+                    {% endunless %}
+
+                    {% if item.selling_plan_allocation != blank %}
+                      <p class="cart__variant">{{ item.selling_plan_allocation.selling_plan.name }}</p>
+                    {% endif %}
+
+                    <p class="cart__unit">{{ item.original_price | money }}</p>
+
+                    {% if item.line_level_discount_allocations.size > 0 %}
+                      <ul class="cart__discounts">
+                        {% for allocation in item.line_level_discount_allocations %}
+                          <li>
+                            {{ allocation.discount_application.title }}
+                            (&minus;{{ allocation.amount | money }})
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    {% endif %}
+                  </div>
+
+                  <div class="cart__controls">
+                    {% render 'quantity-input',
+                      name: 'updates[]',
+                      value: item.quantity,
+                      label: item.product.title,
+                      min: 0
+                    %}
+                    <a class="cart__remove" href="{{ item.url_to_remove }}">{{ 'cart.remove' | t }}</a>
+                  </div>
+
+                  <p class="cart__line-total">
+                    {% if item.original_line_price > item.final_line_price %}
+                      <s class="cart__was">{{ item.original_line_price | money }}</s>
+                    {% endif %}
+                    {{ item.final_line_price | money }}
+                  </p>
+                </li>
+              {% endfor %}
+            </ul>
+
+            {% comment %} No-JS fallback: the script submits on change instead. {% endcomment %}
+            <noscript>
+              <button class="btn btn--secondary cart__update" type="submit" name="update">
+                {{ 'cart.update' | t }}
+              </button>
+            </noscript>
+
+            {% if section.settings.show_note %}
+              <div class="cart__note">
+                <label class="cart__note-label" for="cart-note">{{ 'cart.note' | t }}</label>
+                <textarea id="cart-note" name="note" rows="3">{{ cart.note }}</textarea>
+              </div>
+            {% endif %}
+          </div>
+
+          <aside class="cart__summary" aria-label="{{ 'cart.summary' | t }}">
+            <div class="cart__summary-inner">
+              {% if section.settings.free_shipping_threshold > 0 %}
+                <div class="cart__ship">
+                  {% if remaining > 0 %}
+                    <p class="cart__ship-text">
+                      {{ 'cart.free_shipping_remaining' | t: amount: remaining | money }}
+                    </p>
+                  {% else %}
+                    <p class="cart__ship-text">{{ 'cart.free_shipping_reached' | t }}</p>
+                  {% endif %}
+                  {% liquid
+                    assign pct = cart.total_price | times: 100 | divided_by: threshold
+                    if pct > 100
+                      assign pct = 100
+                    endif
+                  %}
+                  <div class="cart__ship-track">
+                    <span class="cart__ship-fill" style="--pct: {{ pct }}%;"></span>
+                  </div>
+                </div>
+              {% endif %}
+
+              <dl class="cart__totals">
+                <div class="cart__row">
+                  <dt>{{ 'cart.subtotal' | t }}</dt>
+                  <dd>{{ cart.total_price | money }}</dd>
+                </div>
+
+                {% if cart.cart_level_discount_applications.size > 0 %}
+                  {% for discount in cart.cart_level_discount_applications %}
+                    <div class="cart__row cart__row--discount">
+                      <dt>{{ discount.title }}</dt>
+                      <dd>&minus;{{ discount.total_allocated_amount | money }}</dd>
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </dl>
+
+              <p class="cart__tax">{{ 'cart.taxes_note' | t }}</p>
+
+              <button class="btn btn--primary cart__checkout" type="submit" name="checkout">
+                {{ 'cart.checkout' | t }}
+                <span class="cart__checkout-total">{{ cart.total_price | money }}</span>
+              </button>
+
+              {% comment %}
+                Shop Pay / Google Pay / PayPal, when the merchant has them on.
+                They skip the cart entirely, so they sit under the main button.
+              {% endcomment %}
+              {% if additional_checkout_buttons and section.settings.show_wallets %}
+                <div class="cart__wallets">{{ content_for_additional_checkout_buttons }}</div>
+              {% endif %}
+
+              {% if section.settings.reassurance != blank %}
+                <p class="cart__reassure">
+                  {% render 'icon', name: 'shield', size: 15 %}
+                  <span>{{ section.settings.reassurance }}</span>
+                </p>
+              {% endif %}
+
+              {% if section.settings.show_payment_icons and shop.enabled_payment_types.size > 0 %}
+                <ul class="cart__payments">
+                  {% for type in shop.enabled_payment_types %}
+                    <li>{{ type | payment_type_svg_tag: class: 'cart__payment' }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </div>
+          </aside>
+        </div>
+
+        {% comment %}
+          Mobile: the same submit, fixed to the bottom so checkout is always
+          one tap away. Hidden on desktop, where the summary panel is sticky.
+        {% endcomment %}
+        <div class="cart__bar">
+          <div class="cart__bar-inner">
+            <span class="cart__bar-total">
+              <span class="cart__bar-label">{{ 'cart.subtotal' | t }}</span>
+              <span class="cart__bar-value">{{ cart.total_price | money }}</span>
+            </span>
+            <button class="btn btn--primary cart__bar-cta" type="submit" name="checkout">
+              {{ 'cart.checkout' | t }}
+            </button>
+          </div>
+        </div>
+      {% endform %}
+    {% endif %}
+  </div>
+</div>
+
+{% stylesheet %}
+  .cart__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+    row-gap: var(--space-12);
+  }
+
+  .cart__head,
+  .cart__form,
+  .cart__empty {
+    grid-column: 2;
+  }
+
+  .cart__empty {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-6);
+  }
+
+  .cart__layout {
+    display: grid;
+    gap: var(--space-12);
+  }
+
+  .cart__list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cart__item {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: var(--space-4) var(--space-6);
+    padding-block: var(--space-6);
+    border-block-start: 1px solid var(--color-hairline);
+  }
+
+  .cart__item:last-child {
+    border-block-end: 1px solid var(--color-hairline);
+  }
+
+  /* A cut-out product photo needs a light ground to read against. */
+  .cart__media {
+    display: block;
+    background-color: var(--color-brand-3);
+    aspect-ratio: 3 / 4;
+  }
+
+  .cart__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+  }
+
+  .cart__details {
+    min-width: 0;
+  }
+
+  .cart__title {
+    font-size: var(--text-lg);
+    color: currentcolor;
+    text-decoration: none;
+  }
+
+  .cart__title:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .cart__variant,
+  .cart__unit {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    margin-block-start: var(--space-1);
+  }
+
+  .cart__discounts {
+    margin-block-start: var(--space-2);
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-accent);
+  }
+
+  .cart__controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    grid-column: 2;
+  }
+
+  .cart__remove {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .cart__remove:hover {
+    color: currentcolor;
+  }
+
+  .cart__line-total {
+    grid-column: 2;
+    font-family: var(--font-display--family);
+    font-variation-settings: var(--display-variation);
+    font-size: var(--text-lg);
+  }
+
+  .cart__was {
+    opacity: 0.5;
+    font-family: var(--font-primary--family);
+    font-size: var(--text-sm);
+    margin-inline-end: var(--space-2);
+  }
+
+  .cart__update {
+    margin-block-start: var(--space-6);
+  }
+
+  .cart__note {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-start: var(--space-8);
+  }
+
+  .cart__note-label {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .cart__note textarea {
+    width: 100%;
+    padding: var(--space-3);
+    background-color: transparent;
+    color: currentcolor;
+    border: 1px solid var(--color-hairline);
+  }
+
+  /* Summary */
+  .cart__summary-inner {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-8);
+    border: 1px solid var(--color-hairline);
+  }
+
+  .cart__ship-text {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    margin-block-end: var(--space-3);
+  }
+
+  .cart__ship-track {
+    height: 3px;
+    background-color: var(--color-hairline);
+  }
+
+  .cart__ship-fill {
+    display: block;
+    height: 100%;
+    width: var(--pct, 0%);
+    background-color: var(--color-accent);
+    transition: width var(--dur-slow) var(--ease-out);
+  }
+
+  .cart__totals {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--color-hairline);
+  }
+
+  .cart__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .cart__row dt {
+    color: var(--color-muted);
+  }
+
+  .cart__row dd {
+    margin: 0;
+    font-family: var(--font-display--family);
+    font-variation-settings: var(--display-variation);
+    font-size: var(--text-xl);
+  }
+
+  .cart__row--discount dd {
+    color: var(--color-accent);
+  }
+
+  .cart__tax {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+  }
+
+  .cart__checkout {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .cart__checkout-total {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cart__wallets {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .cart__reassure {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .cart__reassure svg {
+    color: var(--color-accent);
+  }
+
+  .cart__payments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cart__payment {
+    width: 38px;
+    height: auto;
+  }
+
+  /* Mobile checkout bar */
+  .cart__bar {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 60;
+    background-color: var(--color-background);
+    border-block-start: 1px solid var(--color-hairline);
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+  }
+
+  .cart__bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: min(var(--page-width), 100%);
+    max-width: 100%;
+    margin-inline: auto;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  /* Shrinks so the checkout button is never pushed off the edge. */
+  .cart__bar-total {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .cart__bar-label {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+  }
+
+  .cart__bar-value {
+    font-family: var(--font-display--family);
+    font-variation-settings: var(--display-variation);
+    font-size: var(--text-lg);
+  }
+
+  .cart__bar-cta {
+    flex: none;
+    min-height: 48px;
+    padding-inline: var(--space-6);
+    white-space: nowrap;
+  }
+
+  @media (min-width: 900px) {
+    .cart__layout {
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 24rem);
+      gap: var(--space-16);
+      align-items: start;
+    }
+
+    .cart__item {
+      grid-template-columns: 96px 1fr auto auto;
+      align-items: center;
+      gap: var(--space-8);
+    }
+
+    .cart__controls,
+    .cart__line-total {
+      grid-column: auto;
+    }
+
+    .cart__line-total {
+      min-width: 6ch;
+      text-align: end;
+    }
+
+    /* Desktop keeps the summary in view instead of a fixed bar. */
+    .cart__summary-inner {
+      position: sticky;
+      inset-block-start: calc(5rem + var(--space-6));
+    }
+
+    .cart__bar {
+      display: none;
+    }
+  }
+
+  @media (max-width: 899px) {
+    /* Clear the fixed bar so the last line item is never trapped under it. */
+    .cart__form {
+      padding-block-end: 84px;
+    }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  // Submitting on change removes the Update step. The <noscript> button stays
+  // for anyone without this.
+  (function () {
+    const form = document.querySelector('.cart__form');
+    if (!form) return;
+
+    let timer;
+    form.addEventListener('change', (event) => {
+      if (!event.target.matches('[data-quantity-input]')) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => form.requestSubmit(), 350);
+    });
+  })();
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:general.cart",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "product",
+      "id": "product",
+      "label": "t:labels.product",
+      "info": "t:info.cart_product"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_note",
+      "label": "t:labels.show_note",
+      "info": "t:info.show_note",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "t:general.checkout"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_wallets",
+      "label": "t:labels.show_wallets",
+      "info": "t:info.show_wallets",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_payment_icons",
+      "label": "t:labels.show_payment_icons",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "reassurance",
+      "label": "t:labels.reassurance",
+      "default": "Secure checkout. 30-day returns."
+    },
+    {
+      "type": "range",
+      "id": "free_shipping_threshold",
+      "min": 0,
+      "max": 200,
+      "step": 5,
+      "label": "t:labels.free_shipping_threshold",
+      "info": "t:info.free_shipping_threshold",
+      "default": 50
+    }
+  ]
+}
+{% endschema %}

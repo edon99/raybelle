@@ -1,0 +1,184 @@
+{% comment %}
+  Closing call to action.
+
+  Repeats the buy action at the bottom of the page, where a visitor who read
+  the whole story ends up. Price and link come from the product so they cannot
+  fall out of sync with the hero.
+{% endcomment %}
+
+{% liquid
+  assign product = section.settings.product | default: settings.featured_product
+  comment
+    Last resort: the store's first product. Without this, an unset "featured
+    product" means every buy control on the site renders nothing — the hero has
+    no Add to cart, the sticky bar does not appear, the closing CTA is empty,
+    and there is no route to the product page at all. Falling through to the
+    catalogue means the store sells something the moment it has something to
+    sell, and picking a featured product then overrides it.
+  endcomment
+  if product == blank
+    assign product = collections['all'].products.first
+  endif
+%}
+
+<div class="cta band {{ section.settings.band }} band-pad full-width">
+  <div class="cta__inner">
+    <div class="cta__panel reveal">
+      {% if section.settings.kicker != blank %}
+        <p class="eyebrow">{{ section.settings.kicker }}</p>
+      {% endif %}
+
+      <h2 class="display cta__title">{{ section.settings.heading }}</h2>
+
+      {% if section.settings.body != blank %}
+        <div class="lede cta__body">{{ section.settings.body }}</div>
+      {% endif %}
+
+      <div class="cta__actions">
+        {% if product != blank %}
+          <a class="btn btn--primary" href="{{ product.url }}">
+            {{ section.settings.cta_label | default: 'Shop now' }}
+            {% if section.settings.show_price %}
+              <span class="cta__price">{{ product.price | money }}</span>
+            {% endif %}
+          </a>
+        {% elsif section.settings.link_url != blank %}
+          <a class="btn btn--primary" href="{{ section.settings.link_url }}">
+            {{ section.settings.cta_label | default: 'Shop now' }}
+          </a>
+        {% endif %}
+      </div>
+
+      {% if section.settings.reassurance != blank %}
+        <p class="cta__reassurance">
+          {% render 'icon', name: 'shield', size: 15 %}
+          <span>{{ section.settings.reassurance }}</span>
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .cta__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+  }
+
+  .cta__panel {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-4);
+  }
+
+  .cta__title {
+    font-size: var(--text-4xl);
+    max-width: 16ch;
+  }
+
+  .cta__body {
+    text-align: center;
+  }
+
+  .cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-block-start: var(--space-4);
+  }
+
+  .cta__price {
+    padding-inline-start: var(--space-3);
+    margin-inline-start: var(--space-1);
+    border-inline-start: 1px solid currentcolor;
+    opacity: 0.85;
+  }
+
+  .cta__reassurance {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    opacity: 0.85;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.cta_banner",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "band",
+      "label": "t:labels.band",
+      "default": "band--ink",
+      "options": [
+        { "value": "band--page", "label": "t:options.band.page" },
+        { "value": "band--surface", "label": "t:options.band.surface" },
+        { "value": "band--brand-1", "label": "t:options.band.brand_1" },
+        { "value": "band--brand-2", "label": "t:options.band.brand_2" },
+        { "value": "band--brand-3", "label": "t:options.band.brand_3" },
+        { "value": "band--ink", "label": "t:options.band.ink" }
+      ]
+    },
+    {
+      "type": "product",
+      "id": "product",
+      "label": "t:labels.product",
+      "info": "t:info.product_fallback"
+    },
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "t:labels.kicker",
+      "default": "Raybelle"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:labels.heading",
+      "default": "Coffee worth carrying"
+    },
+    {
+      "type": "richtext",
+      "id": "body",
+      "label": "t:labels.body",
+      "default": "<p>Free shipping over 50. Thirty days to change your mind.</p>"
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "t:labels.cta_label",
+      "default": "Shop now"
+    },
+    {
+      "type": "url",
+      "id": "link_url",
+      "label": "t:labels.link_url",
+      "info": "t:info.cta_link_fallback"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_price",
+      "label": "t:labels.show_price",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "reassurance",
+      "label": "t:labels.reassurance",
+      "default": "Two-year warranty, replaceable battery"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.cta_banner"
+    }
+  ]
+}
+{% endschema %}

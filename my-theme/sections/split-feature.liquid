@@ -1,0 +1,317 @@
+{% comment %}
+  Large alternating image / copy block.
+
+  Stack two or three of these with the media side flipped and different bands to
+  build the scrolling product story. Falls back to the featured product's image
+  when no image is picked, so the section still reads on a fresh install.
+{% endcomment %}
+
+{% liquid
+  assign product = section.settings.product | default: settings.featured_product
+  comment
+    Last resort: the store's first product. Without this, an unset "featured
+    product" means every buy control on the site renders nothing — the hero has
+    no Add to cart, the sticky bar does not appear, the closing CTA is empty,
+    and there is no route to the product page at all. Falling through to the
+    catalogue means the store sells something the moment it has something to
+    sell, and picking a featured product then overrides it.
+  endcomment
+  if product == blank
+    assign product = collections['all'].products.first
+  endif
+  assign media = section.settings.image
+  if media == blank
+    assign media = product.featured_image
+  endif
+%}
+
+<div class="split band {{ section.settings.band }} band-pad full-width">
+  <div class="split__inner {{ section.settings.media_position }}">
+    <div class="split__media reveal">
+      <div class="split__frame">
+        {% if media != blank %}
+          {{
+            media
+            | image_url: width: 1200
+            | image_tag: class: 'split__img', widths: '400,600,900,1200', sizes: '(min-width: 900px) 46vw, 90vw', loading: 'lazy'
+          }}
+        {% elsif section.settings.demo_asset != blank %}
+          {% comment %} Bundled demo photography — see assets/DEMO-IMAGES.txt {% endcomment %}
+          <img
+            class="split__img"
+            src="{{ section.settings.demo_asset | asset_url }}"
+            alt=""
+            width="1200"
+            height="1500"
+            loading="lazy"
+          >
+        {% else %}
+          {{ 'detailed-apparel-1' | placeholder_svg_tag: 'split__img' }}
+        {% endif %}
+      </div>
+
+      {% if section.settings.badge != blank %}
+        <p class="split__badge display">{{ section.settings.badge }}</p>
+      {% endif %}
+    </div>
+
+    <div class="split__copy reveal">
+      {% if section.settings.kicker != blank %}
+        <p class="eyebrow">{{ section.settings.kicker }}</p>
+      {% endif %}
+
+      <h2 class="display section-title split__title">{{ section.settings.heading }}</h2>
+
+      {% if section.settings.body != blank %}
+        <div class="split__body measure">{{ section.settings.body }}</div>
+      {% endif %}
+
+      {% if section.blocks.size > 0 %}
+        <ul class="split__list">
+          {% for block in section.blocks %}
+            <li class="split__list-item" {{ block.shopify_attributes }}>
+              {% render 'icon', name: 'check', size: 15 %}
+              <span>{{ block.settings.text }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if section.settings.link_label != blank %}
+        {% liquid
+          assign target = section.settings.link_url
+          if target == blank and product != blank
+            assign target = product.url
+          endif
+        %}
+        {% if target != blank %}
+          <a class="btn btn--primary split__cta" href="{{ target }}">
+            {{ section.settings.link_label }}
+            {% render 'icon', name: 'arrow-right', size: 20 %}
+          </a>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .split__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+    row-gap: var(--space-12);
+  }
+
+  .split__media,
+  .split__copy {
+    grid-column: 2;
+  }
+
+  .split__media {
+    position: relative;
+  }
+
+  /*
+   * The photo fills a fixed frame. Without this the section rendered a small
+   * object floating in a large empty box, which is what made the page read as
+   * unfinished.
+   */
+  .split__frame {
+    overflow: hidden;
+    border-radius: var(--radius-block);
+    aspect-ratio: 4 / 5;
+  }
+
+  .split__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .split__badge {
+    position: absolute;
+    inset-block-start: var(--space-4);
+    inset-inline-start: var(--space-4);
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-brand-1);
+    color: var(--color-on-brand-1);
+    font-size: var(--text-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .split__title {
+    margin-block: var(--space-3) var(--space-4);
+  }
+
+  .split__body {
+    font-size: var(--text-lg);
+  }
+
+  .split__list {
+    display: grid;
+    gap: var(--space-3);
+    margin-block: var(--space-6);
+    padding: 0;
+    list-style: none;
+  }
+
+  .split__list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+  }
+
+  .split__list-item svg {
+    flex: none;
+    margin-block-start: 5px;
+    color: var(--color-brand-1);
+  }
+
+  .split__cta {
+    margin-block-start: var(--space-4);
+  }
+
+  @media (min-width: 900px) {
+    .split__inner {
+      grid-template-columns: var(--content-margin) 1fr 1fr var(--content-margin);
+      align-items: center;
+      column-gap: var(--space-16);
+    }
+
+    .split__media {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .split__copy {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
+    /* Flipping the media side is two properties, so it rides on a class. */
+    .split__inner--media-right .split__media {
+      grid-column: 3;
+    }
+
+    .split__inner--media-right .split__copy {
+      grid-column: 2;
+    }
+
+    .split__inner {
+      column-gap: var(--space-12);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.split_feature",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "band",
+      "label": "t:labels.band",
+      "default": "band--surface",
+      "options": [
+        { "value": "band--page", "label": "t:options.band.page" },
+        { "value": "band--surface", "label": "t:options.band.surface" },
+        { "value": "band--brand-1", "label": "t:options.band.brand_1" },
+        { "value": "band--brand-2", "label": "t:options.band.brand_2" },
+        { "value": "band--brand-3", "label": "t:options.band.brand_3" },
+        { "value": "band--ink", "label": "t:options.band.ink" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "media_position",
+      "label": "t:labels.media_position",
+      "default": "split__inner--media-left",
+      "options": [
+        { "value": "split__inner--media-left", "label": "t:options.alignment.left" },
+        { "value": "split__inner--media-right", "label": "t:options.alignment.right" }
+      ]
+    },
+    {
+      "type": "product",
+      "id": "product",
+      "label": "t:labels.product",
+      "info": "t:info.product_fallback"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "t:labels.image_override",
+      "info": "t:info.image_override"
+    },
+    {
+      "type": "text",
+      "id": "demo_asset",
+      "label": "t:labels.demo_asset",
+      "info": "t:info.demo_asset"
+    },
+    {
+      "type": "text",
+      "id": "badge",
+      "label": "t:labels.badge",
+      "info": "t:info.badge"
+    },
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "t:labels.kicker"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:labels.heading",
+      "default": "It fits the bag you already carry"
+    },
+    {
+      "type": "richtext",
+      "id": "body",
+      "label": "t:labels.body",
+      "default": "<p>Under 700 grams and the size of a water bottle. It lives in the side pocket, not the kitchen.</p>"
+    },
+    {
+      "type": "text",
+      "id": "link_label",
+      "label": "t:labels.link_label"
+    },
+    {
+      "type": "url",
+      "id": "link_url",
+      "label": "t:labels.link_url",
+      "info": "t:info.link_fallback"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "point",
+      "name": "t:general.point",
+      "settings": [
+        {
+          "type": "text",
+          "id": "text",
+          "label": "t:labels.text",
+          "default": "A short, checkable claim."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.split_feature",
+      "blocks": [
+        { "type": "point", "settings": { "text": "690 g, 21 cm tall" } },
+        { "type": "point", "settings": { "text": "Cabin-bag safe, no pressurised canister" } },
+        { "type": "point", "settings": { "text": "Works with ground coffee or pods" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

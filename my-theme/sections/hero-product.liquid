@@ -1,0 +1,725 @@
+{% comment %}
+  Hero product showcase.
+
+  Product-led by construction: the media column bleeds to the viewport edge
+  while the copy column keeps the container inset, so the product is shown
+  large rather than floating inside a boxed square.
+
+  The product is a setting, never hardcoded — it falls back to the theme-level
+  `featured_product`, so swapping what the site sells is one change in Theme
+  settings. With no product selected it renders a bundled demo asset, so the
+  section is safe to preview on an empty store.
+
+  Finish swatches swap the image with pure CSS. The radio inputs are direct
+  children of `.hero__grid` because `~` only reaches siblings: they have to sit
+  beside BOTH columns to drive the image and the swatch state at once. The
+  shots use `:nth-of-type` rather than `:nth-child` because the stock chip is
+  the media column's first child.
+{% endcomment %}
+
+{% liquid
+  assign product = section.settings.product | default: settings.featured_product
+  comment
+    Last resort: the store's first product. Without this, an unset "featured
+    product" means every buy control on the site renders nothing — the hero has
+    no Add to cart, the sticky bar does not appear, the closing CTA is empty,
+    and there is no route to the product page at all. Falling through to the
+    catalogue means the store sells something the moment it has something to
+    sell, and picking a featured product then overrides it.
+  endcomment
+  if product == blank
+    assign product = collections['all'].products.first
+  endif
+  assign kicker = section.settings.kicker | default: settings.product_kicker
+
+  assign heading = section.settings.heading
+  if heading == blank and product != blank
+    assign heading = product.title
+  endif
+
+  assign variants = product.variants
+
+  comment
+    Where the button goes: the setting first, then the resolved product's own
+    URL. Setting it explicitly means the hero can point at a specific product
+    regardless of which one the rest of the page resolves to.
+  endcomment
+  assign buy_url = section.settings.buy_url
+  if buy_url == blank and product != blank
+    assign buy_url = product.url
+  endif
+
+  assign show_swatches = false
+  if section.settings.show_swatches and product != blank and product.variants.size > 1
+    assign show_swatches = true
+  endif
+%}
+
+<div class="hero band {{ section.settings.band }} full-width">
+  <div class="hero__grid">
+    {% if show_swatches %}
+      {% for variant in variants limit: 8 %}
+        <input
+          type="radio"
+          class="visually-hidden hero__radio"
+          name="hero-variant-{{ section.id }}"
+          id="hero-v-{{ section.id }}-{{ forloop.index }}"
+          value="{{ variant.id }}"
+          {% if variant.available == false %}
+            disabled
+          {% endif %}
+          {% if forloop.first %}
+            checked
+          {% endif %}
+        >
+      {% endfor %}
+    {% endif %}
+
+    <div class="hero__copy">
+      {% if kicker != blank %}
+        <p class="eyebrow">{{ kicker }}</p>
+      {% endif %}
+
+      <h1 class="display hero__title">{{ heading }}</h1>
+      <span class="hero__rule" aria-hidden="true"></span>
+
+      {% if section.settings.body != blank %}
+        <div class="lede hero__body">{{ section.settings.body }}</div>
+      {% endif %}
+
+      {% if section.settings.show_price and product != blank %}
+        <p class="hero__price">
+          <span class="hero__price-now">{{ product.price | money }}</span>
+          {% if product.compare_at_price > product.price %}
+            {%- assign saved = product.compare_at_price | minus: product.price | money -%}
+            <s class="hero__price-was">{{ product.compare_at_price | money }}</s>
+            <span class="hero__save">{{ 'product.save_amount' | t: amount: saved }}</span>
+          {% endif %}
+        </p>
+      {% endif %}
+
+      {% if show_swatches %}
+        <div class="hero__finish">
+          <fieldset class="hero__swatches">
+            <legend class="visually-hidden">{{ 'product.choose_option' | t }}</legend>
+            {% for variant in variants limit: 8 %}
+              {%- assign swatch_value = variant.title | split: ' / ' | first | downcase | replace: ' ', '' -%}
+              <label class="hero__swatch" for="hero-v-{{ section.id }}-{{ forloop.index }}">
+                <span class="hero__swatch-dot" style="--swatch: {{ swatch_value }};"></span>
+                <span class="visually-hidden">{{ variant.title }}</span>
+              </label>
+            {% endfor %}
+          </fieldset>
+          {% comment %} Mirrors the checked swatch; decorative, the label is on the input. {% endcomment %}
+          <span class="hero__finish-name" aria-hidden="true">
+            {% for variant in variants limit: 8 %}
+              <span>{{ variant.title }}</span>
+            {% endfor %}
+          </span>
+        </div>
+      {% endif %}
+
+      {% comment %}
+        A link, not an add-to-cart form. The hero sends people to the product
+        page to choose and buy there; the cart form lives on that page.
+      {% endcomment %}
+      {% comment %} Both calls to action sit on one row. {% endcomment %}
+      <div class="hero__actions">
+        {% if buy_url != blank %}
+          <a class="btn btn--primary hero__cta" href="{{ buy_url }}">
+            {{ section.settings.cta_label | default: 'Buy now' }}
+          </a>
+        {% endif %}
+
+        {% if section.settings.link_label != blank and section.settings.link_url != blank %}
+          <a class="btn btn--secondary hero__link" href="{{ section.settings.link_url }}">
+            {{ section.settings.link_label }}
+          </a>
+        {% endif %}
+      </div>
+
+      {% if section.settings.rating_text != blank %}
+        <p class="hero__rating">
+          <span class="hero__stars" role="img" aria-label="{{ section.settings.rating_label | escape }}">
+            {% for i in (1..5) %}
+              {% render 'icon', name: 'star', size: 13 %}
+            {% endfor %}
+          </span>
+          <span>{{ section.settings.rating_text }}</span>
+        </p>
+      {% endif %}
+
+      {% if section.blocks.size > 0 %}
+        <ul class="hero__trust">
+          {% for block in section.blocks %}
+            <li class="hero__trust-item" {{ block.shopify_attributes }}>
+              {% render 'icon', name: block.settings.icon, size: 15 %}
+              <span>{{ block.settings.text }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+
+    <div class="hero__media">
+      {% if section.settings.availability != blank %}
+        <span class="hero__stock">{{ section.settings.availability }}</span>
+      {% endif %}
+
+      {% liquid
+        assign media_list = product.images
+        if section.settings.image != blank
+          assign media_list = null
+        endif
+      %}
+
+      {% if section.settings.image != blank %}
+        {{
+          section.settings.image
+          | image_url: width: 1200
+          | image_tag: class: 'hero__img', widths: '480,720,1000,1200', sizes: '(min-width: 900px) 48vw, 100vw', fetchpriority: 'high'
+        }}
+      {% elsif media_list != blank and media_list.size > 0 %}
+        {% for image in media_list limit: 8 %}
+          {{
+            image
+            | image_url: width: 1200
+            | image_tag: class: 'hero__img', widths: '480,720,1000,1200', sizes: '(min-width: 900px) 48vw, 100vw', loading: 'eager', fetchpriority: 'high'
+          }}
+        {% endfor %}
+      {% elsif section.settings.demo_asset != blank %}
+        {% comment %} Bundled demo asset — see assets/DEMO-IMAGES.txt {% endcomment %}
+        <img
+          class="hero__img"
+          src="{{ section.settings.demo_asset | asset_url }}"
+          alt="{{ heading | escape }}"
+          width="900"
+          height="1125"
+          fetchpriority="high"
+        >
+      {% else %}
+        {{ 'product-1' | placeholder_svg_tag: 'hero__img' }}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .hero__grid {
+    display: grid;
+  }
+
+  /*
+   * Grid children default to `min-width: auto`, which means a column refuses to
+   * go narrower than its content's minimum — the action buttons' min-content
+   * was widening the whole hero past the viewport on a 320px screen.
+   */
+  .hero__grid > * {
+    min-width: 0;
+  }
+
+  .hero__copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: calc(var(--section-rhythm) * 0.7);
+    /* Keeps the copy on the container inset while the media bleeds. */
+    padding-inline-start: max(
+      var(--page-margin),
+      calc((100vw - var(--page-width)) / 2 + var(--page-margin))
+    );
+    padding-inline-end: var(--page-margin);
+  }
+
+  .hero__title {
+    font-size: var(--text-4xl);
+    max-width: 13ch;
+    margin-block-end: var(--space-4);
+  }
+
+  .hero__rule {
+    display: block;
+    width: 56px;
+    height: 1px;
+    background-color: var(--color-accent, var(--color-brand-1));
+    margin-block-end: var(--space-4);
+    transform-origin: left center;
+  }
+
+  /*
+   * The hero is above the fold, so it animates on load rather than on scroll.
+   * Each part follows the one before it; the product panel fades up with them
+   * so the two halves arrive together rather than the copy landing alone.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__copy > * {
+      animation: hero-rise 700ms var(--ease-out) both;
+    }
+
+    .hero__copy > .eyebrow { animation-delay: 60ms; }
+    .hero__copy > .hero__title { animation-delay: 130ms; }
+    .hero__copy > .hero__rule {
+      animation: hero-draw 620ms var(--ease-out) 220ms both;
+    }
+    .hero__copy > .hero__body { animation-delay: 300ms; }
+    .hero__copy > .hero__price { animation-delay: 360ms; }
+    .hero__copy > .hero__finish { animation-delay: 410ms; }
+    .hero__copy > .hero__actions { animation-delay: 460ms; }
+    .hero__copy > .hero__rating { animation-delay: 520ms; }
+    .hero__copy > .hero__trust { animation-delay: 580ms; }
+
+    .hero__media {
+      animation: hero-media 900ms var(--ease-out) 120ms both;
+    }
+  }
+
+  @keyframes hero-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes hero-draw {
+    from {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes hero-media {
+    from {
+      opacity: 0;
+      clip-path: inset(0 0 12% 0);
+    }
+    to {
+      opacity: 1;
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  .hero__body {
+    margin-block-end: var(--space-6);
+  }
+
+  .hero__media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: clamp(360px, 52vw, 660px);
+    background-color: var(--color-brand-3);
+  }
+
+  /*
+   * `multiply` drops the white background of a cut-out product photo to the
+   * panel colour, so one asset works on any light band.
+   */
+  .hero__img {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 7% 12%;
+    mix-blend-mode: multiply;
+    opacity: 0;
+    transition: opacity var(--dur-slow) var(--ease-out);
+  }
+
+  /* One shot and no swatches: nothing drives the opacity, so show it. */
+  .hero__media > .hero__img:only-of-type {
+    opacity: 1;
+  }
+
+  .hero__stock {
+    position: absolute;
+    inset-block-start: var(--space-4);
+    inset-inline-end: var(--space-4);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-size: var(--text-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .hero__stock::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-support);
+  }
+
+  .hero__price {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block: var(--space-6) var(--space-4);
+  }
+
+  .hero__price-now {
+    font-family: var(--font-display--family);
+    font-variation-settings: var(--display-variation);
+    font-size: var(--text-2xl);
+  }
+
+  .hero__price-was {
+    opacity: 0.42;
+    font-size: var(--text-lg);
+  }
+
+  .hero__save {
+    padding: var(--space-1) var(--space-3);
+    border-radius: 2px;
+    background-color: var(--color-brand-1);
+    color: var(--color-on-brand-1);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* The finish picker sits with the buy controls, where it reads as a choice. */
+  .hero__finish {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-block-end: var(--space-4);
+  }
+
+  .hero__swatches {
+    display: flex;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .hero__swatch {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+  }
+
+  .hero__swatch-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-pill);
+    background-color: var(--swatch, var(--color-surface));
+    border: 1px solid var(--color-hairline);
+    transition:
+      box-shadow var(--dur-base) var(--ease-out),
+      transform var(--dur-base) var(--ease-spring);
+  }
+
+  .hero__swatch:hover .hero__swatch-dot {
+    transform: scale(1.14);
+  }
+
+  .hero__finish-name {
+    font-size: var(--text-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .hero__finish-name > span {
+    display: none;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .hero__cta,
+  .hero__link {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* An unavailable swatch is still announced, just not selectable. */
+  .hero__radio:disabled + .hero__swatch .hero__swatch-dot {
+    opacity: 0.4;
+  }
+
+  .hero__rating {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-block-start: var(--space-4);
+    font-size: var(--text-sm);
+    opacity: 0.8;
+  }
+
+  .hero__stars {
+    display: inline-flex;
+    gap: 2px;
+    color: var(--color-brand-1);
+  }
+
+  .hero__trust {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-6);
+    margin-block-start: var(--space-6);
+    padding-block-start: var(--space-4);
+    padding-inline: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    border-block-start: 1px solid var(--color-hairline);
+  }
+
+  .hero__trust-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .hero__trust-item svg {
+    color: var(--color-brand-1);
+  }
+
+  /*
+   * One static rule per swatch index, up to the eight-variant limit the markup
+   * enforces. Liquid is not evaluated inside a stylesheet tag, so this set
+   * cannot be generated.
+   */
+  .hero__radio:nth-of-type(1):checked ~ .hero__media .hero__img:nth-of-type(1),
+  .hero__radio:nth-of-type(2):checked ~ .hero__media .hero__img:nth-of-type(2),
+  .hero__radio:nth-of-type(3):checked ~ .hero__media .hero__img:nth-of-type(3),
+  .hero__radio:nth-of-type(4):checked ~ .hero__media .hero__img:nth-of-type(4),
+  .hero__radio:nth-of-type(5):checked ~ .hero__media .hero__img:nth-of-type(5),
+  .hero__radio:nth-of-type(6):checked ~ .hero__media .hero__img:nth-of-type(6),
+  .hero__radio:nth-of-type(7):checked ~ .hero__media .hero__img:nth-of-type(7),
+  .hero__radio:nth-of-type(8):checked ~ .hero__media .hero__img:nth-of-type(8) {
+    opacity: 1;
+  }
+
+  .hero__radio:nth-of-type(1):checked ~ .hero__copy .hero__swatch:nth-child(1) .hero__swatch-dot,
+  .hero__radio:nth-of-type(2):checked ~ .hero__copy .hero__swatch:nth-child(2) .hero__swatch-dot,
+  .hero__radio:nth-of-type(3):checked ~ .hero__copy .hero__swatch:nth-child(3) .hero__swatch-dot,
+  .hero__radio:nth-of-type(4):checked ~ .hero__copy .hero__swatch:nth-child(4) .hero__swatch-dot,
+  .hero__radio:nth-of-type(5):checked ~ .hero__copy .hero__swatch:nth-child(5) .hero__swatch-dot,
+  .hero__radio:nth-of-type(6):checked ~ .hero__copy .hero__swatch:nth-child(6) .hero__swatch-dot,
+  .hero__radio:nth-of-type(7):checked ~ .hero__copy .hero__swatch:nth-child(7) .hero__swatch-dot,
+  .hero__radio:nth-of-type(8):checked ~ .hero__copy .hero__swatch:nth-child(8) .hero__swatch-dot {
+    box-shadow: 0 0 0 3px var(--band-bg), 0 0 0 4px var(--band-fg);
+  }
+
+  .hero__radio:nth-of-type(1):checked ~ .hero__copy .hero__finish-name > span:nth-child(1),
+  .hero__radio:nth-of-type(2):checked ~ .hero__copy .hero__finish-name > span:nth-child(2),
+  .hero__radio:nth-of-type(3):checked ~ .hero__copy .hero__finish-name > span:nth-child(3),
+  .hero__radio:nth-of-type(4):checked ~ .hero__copy .hero__finish-name > span:nth-child(4),
+  .hero__radio:nth-of-type(5):checked ~ .hero__copy .hero__finish-name > span:nth-child(5),
+  .hero__radio:nth-of-type(6):checked ~ .hero__copy .hero__finish-name > span:nth-child(6),
+  .hero__radio:nth-of-type(7):checked ~ .hero__copy .hero__finish-name > span:nth-child(7),
+  .hero__radio:nth-of-type(8):checked ~ .hero__copy .hero__finish-name > span:nth-child(8) {
+    display: inline;
+  }
+
+  .hero__radio:focus-visible ~ .hero__copy .hero__swatch .hero__swatch-dot {
+    outline: 3px solid var(--color-brand-2);
+    outline-offset: 3px;
+  }
+
+  @media (min-width: 900px) {
+    .hero__grid {
+      grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+      align-items: stretch;
+    }
+
+    .hero__copy {
+      padding-inline-end: clamp(32px, 4vw, 72px);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.hero_product",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "product",
+      "id": "product",
+      "label": "t:labels.product",
+      "info": "t:info.product_fallback"
+    },
+    {
+      "type": "select",
+      "id": "band",
+      "label": "t:labels.band",
+      "default": "band--page",
+      "options": [
+        { "value": "band--page", "label": "t:options.band.page" },
+        { "value": "band--surface", "label": "t:options.band.surface" },
+        { "value": "band--brand-1", "label": "t:options.band.brand_1" },
+        { "value": "band--brand-2", "label": "t:options.band.brand_2" },
+        { "value": "band--brand-3", "label": "t:options.band.brand_3" },
+        { "value": "band--ink", "label": "t:options.band.ink" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "t:labels.kicker",
+      "info": "t:info.kicker"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:labels.heading",
+      "info": "t:info.heading_fallback",
+      "default": "Espresso, wherever you stop"
+    },
+    {
+      "type": "richtext",
+      "id": "body",
+      "label": "t:labels.body",
+      "default": "<p>Eighteen bars of pressure in something that fits a side pocket. No outlet, no queue, no compromise on the shot.</p>"
+    },
+    {
+      "type": "header",
+      "content": "t:general.media"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "t:labels.image_override",
+      "info": "t:info.image_override"
+    },
+    {
+      "type": "text",
+      "id": "demo_asset",
+      "label": "t:labels.demo_asset",
+      "info": "t:info.demo_asset"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_swatches",
+      "label": "t:labels.show_swatches",
+      "info": "t:info.show_swatches",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "availability",
+      "label": "t:labels.availability",
+      "info": "t:info.availability",
+      "default": "In stock"
+    },
+    {
+      "type": "header",
+      "content": "t:general.actions"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_price",
+      "label": "t:labels.show_price",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "t:labels.cta_label",
+      "default": "Buy now"
+    },
+    {
+      "type": "url",
+      "id": "buy_url",
+      "label": "t:labels.buy_url",
+      "info": "t:info.buy_url"
+    },
+    {
+      "type": "text",
+      "id": "link_label",
+      "label": "t:labels.link_label",
+      "default": "How it works"
+    },
+    {
+      "type": "url",
+      "id": "link_url",
+      "label": "t:labels.link_url"
+    },
+    {
+      "type": "header",
+      "content": "t:general.social_proof"
+    },
+    {
+      "type": "text",
+      "id": "rating_text",
+      "label": "t:labels.rating_text",
+      "default": "4.8 from 2,400+ reviews"
+    },
+    {
+      "type": "text",
+      "id": "rating_label",
+      "label": "t:labels.rating_label",
+      "info": "t:info.rating_label",
+      "default": "Rated 4.8 out of 5"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "bullet",
+      "name": "t:general.bullet",
+      "limit": 4,
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "t:labels.icon",
+          "default": "check",
+          "options": [
+            { "value": "bolt", "label": "t:options.icon.bolt" },
+            { "value": "battery", "label": "t:options.icon.battery" },
+            { "value": "clock", "label": "t:options.icon.clock" },
+            { "value": "leaf", "label": "t:options.icon.leaf" },
+            { "value": "droplet", "label": "t:options.icon.droplet" },
+            { "value": "cup", "label": "t:options.icon.cup" },
+            { "value": "sparkle", "label": "t:options.icon.sparkle" },
+            { "value": "check", "label": "t:options.icon.check" },
+            { "value": "shield", "label": "t:options.icon.shield" },
+            { "value": "globe", "label": "t:options.icon.globe" }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "t:labels.text",
+          "default": "Free shipping"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.hero_product",
+      "blocks": [
+        { "type": "bullet", "settings": { "icon": "check", "text": "Free shipping over 50" } },
+        { "type": "bullet", "settings": { "icon": "check", "text": "30-day returns" } },
+        { "type": "bullet", "settings": { "icon": "check", "text": "Two-year warranty" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

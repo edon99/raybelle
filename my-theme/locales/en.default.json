@@ -1,0 +1,93 @@
+{
+  "404": {
+    "title": "404",
+    "not_found": "Page not found.",
+    "back_to_shopping": "Back to shopping"
+  },
+  "blog": {
+    "article_comments": "Comments",
+    "article_metadata_html": "{{ date }} by {{ author }}",
+    "comment_form_body": "Comment",
+    "comment_form_email": "Email",
+    "comment_form_name": "Name",
+    "comment_form_submit": "Post",
+    "comment_form_title": "Add a comment"
+  },
+  "cart": {
+    "checkout": "Checkout",
+    "decrease_for": "Decrease quantity for {{ title }}",
+    "empty": "Your cart is empty.",
+    "eyebrow": "Your order",
+    "free_shipping_reached": "Free shipping unlocked",
+    "free_shipping_remaining": "{{ amount }} away from free shipping",
+    "increase_for": "Increase quantity for {{ title }}",
+    "note": "Order note",
+    "quantity_for": "Quantity for {{ title }}",
+    "remove": "Remove",
+    "start_shopping": "Start shopping",
+    "subtotal": "Subtotal",
+    "summary": "Order summary",
+    "taxes_note": "Taxes and shipping calculated at checkout.",
+    "title": "Cart",
+    "update": "Update"
+  },
+  "collections": {
+    "all_products": "All products",
+    "browse": "Browse",
+    "count": "{{ count }} products",
+    "empty": "Nothing in this collection yet.",
+    "no_products_yet": "Add products in Shopify and they will appear here.",
+    "none": "No collections yet.",
+    "pagination": "Pagination",
+    "title": "Collections",
+    "view_all_products": "View all products"
+  },
+  "customers": {
+    "login": {
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "title": "Login"
+    }
+  },
+  "general": {
+    "footer_nav": "Footer",
+    "main_nav": "Main",
+    "marquee_placeholder": "Add a phrase in the theme editor",
+    "nav_faq": "Questions",
+    "nav_how": "How it works",
+    "nav_reviews": "Reviews",
+    "skip_to_content": "Skip to content"
+  },
+  "gift_card": {
+    "add_to_apple_wallet": "Add to Apple Wallet",
+    "card": "Gift card",
+    "expired": "This gift card has expired",
+    "expires_on": "Expires on {{ expires_on }}",
+    "use_at_checkout": "Use this gift card at checkout"
+  },
+  "password": {
+    "title": "This shop is private",
+    "password": "Password",
+    "enter": "Enter"
+  },
+  "product": {
+    "choose_option": "Choose an option",
+    "from_price": "From {{ price }}",
+    "next": "Next review",
+    "on_sale": "Sale",
+    "pick_a_product": "Choose a product in Theme settings",
+    "previous": "Previous review",
+    "rating_out_of_five": "{{ rating }} out of 5 stars",
+    "save_amount": "Save {{ amount }}",
+    "sold_out": "Sold out",
+    "view_image": "View image {{ index }}"
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search articles, pages, or products",
+    "submit": "Search",
+    "no_results_html": "No results found for {{ terms }}",
+    "results_for_html": "{{ count }} results found for {{ terms }}"
+  }
+}

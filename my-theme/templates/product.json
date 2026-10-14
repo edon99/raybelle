@@ -1,0 +1,69 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "main": {
+      "type": "product",
+      "settings": {
+        "show_vendor": false,
+        "show_quantity": true,
+        "cta_label": "Add to cart",
+        "show_buy_now": true
+      },
+      "blocks": {
+        "a1": {
+          "type": "assurance",
+          "settings": {
+            "icon": "check",
+            "text": "Free shipping over 50"
+          }
+        },
+        "a2": {
+          "type": "assurance",
+          "settings": {
+            "icon": "check",
+            "text": "30-day returns"
+          }
+        },
+        "a3": {
+          "type": "assurance",
+          "settings": {
+            "icon": "shield",
+            "text": "Two-year warranty"
+          }
+        },
+        "d1": {
+          "type": "detail",
+          "settings": {
+            "heading": "Specifications",
+            "content": "<p>18 bar pump. 690 g. 21 cm tall. USB-C, roughly 20 shots per charge.</p>"
+          }
+        },
+        "d2": {
+          "type": "detail",
+          "settings": {
+            "heading": "Shipping and returns",
+            "content": "<p>Free shipping over 50. Thirty days to change your mind.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "a1",
+        "a2",
+        "a3",
+        "d1",
+        "d2"
+      ]
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

@@ -1,0 +1,405 @@
+{% comment %}
+  Sticky buy bar.
+
+  Mobile by default: on a phone the hero's Add to cart scrolls away within a
+  screen or two, and there is no room for a sticky summary panel the way the
+  cart page has one. Desktop can be turned on, but the header is already sticky
+  there so it is off unless asked for.
+
+  It carries a real add-to-cart form rather than a link, and mirrors whichever
+  variant is selected in the hero — so the bar never adds a different variant
+  from the one on screen.
+
+  Progressive enhancement: the bar starts hidden and JavaScript reveals it.
+  With no JavaScript nothing appears, which is correct — the hero and the
+  closing section both carry their own call to action.
+
+  `position: fixed`, so where it sits in the template does not matter. Put it
+  last.
+{% endcomment %}
+
+{% liquid
+  assign product = section.settings.product | default: settings.featured_product
+  comment
+    Last resort: the store's first product. Without this, an unset "featured
+    product" means every buy control on the site renders nothing — the hero has
+    no Add to cart, the sticky bar does not appear, the closing CTA is empty,
+    and there is no route to the product page at all. Falling through to the
+    catalogue means the store sells something the moment it has something to
+    sell, and picking a featured product then overrides it.
+  endcomment
+  if product == blank
+    assign product = collections['all'].products.first
+  endif
+  assign variant = product.selected_or_first_available_variant
+
+  comment
+    With no product chosen there is nothing to add to a cart, so the live site
+    renders nothing. In the theme editor it renders anyway, with a prompt —
+    otherwise setting the theme up means staring at a section that appears to
+    be broken when it is only unconfigured.
+  endcomment
+  assign render_bar = false
+  if product != blank or request.design_mode
+    assign render_bar = true
+  endif
+%}
+
+{% if render_bar %}
+  <div
+    class="buybar buybar--{{ section.settings.visibility }}{% if request.design_mode %} buybar--editor{% endif %}"
+    data-buy-bar
+    {% if request.design_mode %}
+      data-editor
+    {% endif %}
+    data-reveal-after="{{ section.settings.reveal_after }}"
+    hidden
+  >
+    <div class="buybar__inner">
+      <div class="buybar__info">
+        {% if section.settings.show_image %}
+          {% liquid
+            assign thumb = product.featured_image
+          %}
+          {% if thumb != blank %}
+            {{
+              thumb
+              | image_url: width: 120
+              | image_tag: class: 'buybar__thumb', widths: '60,120', sizes: '48px', loading: 'lazy', alt: ''
+            }}
+          {% elsif section.settings.demo_asset != blank %}
+            <img
+              class="buybar__thumb"
+              src="{{ section.settings.demo_asset | asset_url }}"
+              alt=""
+              width="120"
+              height="160"
+              loading="lazy"
+            >
+          {% endif %}
+        {% endif %}
+
+        <div class="buybar__text">
+          {% if product == blank %}
+            <span class="buybar__title">{{ 'product.pick_a_product' | t }}</span>
+          {% elsif section.settings.show_title %}
+            <span class="buybar__title">{{ product.title }}</span>
+          {% endif %}
+          <span class="buybar__price">
+            {% if product != blank %}{{ product.price | money }}{% endif %}
+            {% if product.compare_at_price > product.price %}
+              <s class="buybar__was">{{ product.compare_at_price | money }}</s>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+      {% if product != blank %}
+        {% form 'product', product, class: 'buybar__form' %}
+          {% comment %} Mirrored from the hero's selected variant by the script below. {% endcomment %}
+          <input type="hidden" name="id" value="{{ variant.id }}" data-buy-bar-variant>
+          <input type="hidden" name="quantity" value="1">
+          <button
+            class="btn btn--primary buybar__cta"
+            type="submit"
+            name="add"
+            {% unless product.available %}
+              disabled
+            {% endunless %}
+          >
+            {% if product.available %}
+              {{ section.settings.bar_label | default: 'Add to cart' }}
+            {% else %}
+              {{ 'product.sold_out' | t }}
+            {% endif %}
+          </button>
+        {% endform %}
+      {% else %}
+        {% comment %} Theme editor only — see render_bar above. {% endcomment %}
+        <span class="btn btn--primary buybar__cta" role="presentation">
+          {{ section.settings.bar_label | default: 'Add to cart' }}
+        </span>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+{% stylesheet %}
+  .buybar {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 60;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    border-block-start: 1px solid var(--color-hairline);
+    /* Clears the home indicator on iOS. */
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+    transform: translateY(100%);
+    transition: transform var(--dur-base) var(--ease-out);
+  }
+
+  .buybar[hidden] {
+    display: none;
+  }
+
+  .buybar.is-visible {
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .buybar {
+      transition: none;
+    }
+  }
+
+  .buybar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    width: min(var(--page-width), 100%);
+    max-width: 100%;
+    margin-inline: auto;
+    padding: var(--space-3) var(--page-margin);
+  }
+
+  /*
+   * The info side shrinks, the button does not. Without `min-width: 0` a flex
+   * item refuses to go below its content width, so the long product title
+   * pushed the button off the right edge instead of ellipsing.
+   */
+  .buybar__info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .buybar__thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    background-color: var(--color-brand-3);
+    mix-blend-mode: multiply;
+    flex: none;
+  }
+
+  .buybar__text {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .buybar__title {
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .buybar__price {
+    font-family: var(--font-display--family);
+    font-variation-settings: var(--display-variation);
+    font-size: var(--text-lg);
+    color: var(--color-accent, var(--color-brand-1));
+  }
+
+  .buybar__was {
+    font-family: var(--font-primary--family);
+    font-size: var(--text-sm);
+    opacity: 0.5;
+    margin-inline-start: var(--space-2);
+  }
+
+  .buybar__form {
+    flex: none;
+    margin: 0;
+  }
+
+  .buybar__cta {
+    min-height: 48px;
+    padding-inline: var(--space-8);
+  }
+
+  .buybar__cta[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /* The bar overlays the page; give the document room so nothing is trapped. */
+  body.has-buybar {
+    padding-block-end: 76px;
+  }
+
+  @media (max-width: 599px) {
+    .buybar__title {
+      display: none;
+    }
+
+    .buybar__inner {
+      gap: var(--space-3);
+      padding-inline: var(--space-4);
+    }
+
+    .buybar__thumb {
+      width: 40px;
+      height: 40px;
+    }
+
+    .buybar__cta {
+      padding-inline: var(--space-4);
+    }
+  }
+
+  /*
+   * Phones only unless the merchant asks for it everywhere — except in the
+   * theme editor, where hiding it on a desktop viewport would mean the merchant
+   * can never see the thing they are configuring.
+   */
+  @media (min-width: 900px) {
+    .buybar--mobile:not(.buybar--editor) {
+      display: none;
+    }
+
+    body.has-buybar {
+      padding-block-end: 0;
+    }
+  }
+
+  /* The prompt has to stay readable at every width. */
+  .buybar--editor .buybar__title {
+    display: block;
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  (function () {
+    const bar = document.querySelector('[data-buy-bar]');
+    if (!bar) return;
+
+    // Keep the bar on whatever variant the hero is showing.
+    const mirror = bar.querySelector('[data-buy-bar-variant]');
+    if (mirror) {
+      document.addEventListener('change', (event) => {
+        const field = event.target;
+        if (field.name === 'id' && field.checked && !bar.contains(field)) {
+          mirror.value = field.value;
+        }
+      });
+    }
+
+    const desktopHidden =
+      bar.classList.contains('buybar--mobile') && !bar.hasAttribute('data-editor');
+    const allowed = () => !desktopHidden || window.matchMedia('(max-width: 899px)').matches;
+
+    const show = () => {
+      if (!allowed()) return;
+      if (bar.hidden) {
+        bar.hidden = false;
+        // Next frame, so the transform transition actually runs.
+        requestAnimationFrame(() => bar.classList.add('is-visible'));
+      } else {
+        bar.classList.add('is-visible');
+      }
+      document.body.classList.add('has-buybar');
+    };
+
+    const hide = () => {
+      bar.classList.remove('is-visible');
+      document.body.classList.remove('has-buybar');
+    };
+
+    // Watch the hero's buy controls, not the whole hero. The hero runs over
+    // 1000px tall, so observing it means scrolling past the entire section
+    // before the bar appears — by which point the visitor has already lost the
+    // Add to cart button. The right trigger is that button leaving the screen.
+    const hero =
+      document.querySelector('.hero__actions') ||
+      document.querySelector('.hero__form') ||
+      document.querySelector('.hero');
+
+    if (hero && 'IntersectionObserver' in window) {
+      new IntersectionObserver(
+        ([entry]) => (entry.isIntersecting ? hide() : show()),
+        { rootMargin: '-72px 0px 0px 0px', threshold: 0 }
+      ).observe(hero);
+      return;
+    }
+
+    const after = parseInt(bar.dataset.revealAfter, 10) || 600;
+    const onScroll = () => (window.scrollY > after ? show() : hide());
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:general.sticky_buy_bar",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:info.sticky_bar"
+    },
+    {
+      "type": "product",
+      "id": "product",
+      "label": "t:labels.product",
+      "info": "t:info.product_fallback"
+    },
+    {
+      "type": "select",
+      "id": "visibility",
+      "label": "t:labels.bar_visibility",
+      "default": "mobile",
+      "options": [
+        { "value": "mobile", "label": "t:options.visibility.mobile" },
+        { "value": "all", "label": "t:options.visibility.all" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "bar_label",
+      "label": "t:labels.bar_label",
+      "default": "Add to cart"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_title",
+      "label": "t:labels.show_title",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_image",
+      "label": "t:labels.show_image",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "demo_asset",
+      "label": "t:labels.demo_asset",
+      "info": "t:info.demo_asset"
+    },
+    {
+      "type": "range",
+      "id": "reveal_after",
+      "min": 200,
+      "max": 1600,
+      "step": 100,
+      "unit": "px",
+      "label": "t:labels.reveal_after",
+      "info": "t:info.reveal_after",
+      "default": 600
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.sticky_buy_bar"
+    }
+  ]
+}
+{% endschema %}

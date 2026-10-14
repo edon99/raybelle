@@ -1,0 +1,172 @@
+{% comment %}
+  A row of products for the homepage.
+
+  A single-product landing page still needs a route into the catalogue —
+  without one there is no path from the homepage to /collections or to any
+  product other than the featured one, and nothing for search engines to crawl.
+
+  Falls back to `collections.all` so it shows real products the moment the
+  store has any, with no configuration.
+{% endcomment %}
+
+{% liquid
+  assign source = section.settings.collection
+  if source == blank
+    assign source = collections['all']
+  endif
+  assign items = source.products
+%}
+
+<div class="fprod band {{ section.settings.band }} band-pad full-width">
+  <div class="fprod__inner">
+    <header class="fprod__head reveal">
+      {% if section.settings.kicker != blank %}
+        <p class="eyebrow">{{ section.settings.kicker }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank %}
+        <h2 class="display section-title">{{ section.settings.heading }}</h2>
+      {% endif %}
+    </header>
+
+    {% if items.size > 0 %}
+      <ul class="fprod__grid" style="--min-col: {{ section.settings.min_column_width }}px;">
+        {% for product in items limit: section.settings.count %}
+          <li class="reveal">
+            {% render 'product-card',
+              product: product,
+              show_vendor: section.settings.show_vendor,
+              show_second_image: true
+            %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% elsif request.design_mode %}
+      {% comment %} Editor only, so an unconfigured section does not look broken. {% endcomment %}
+      <p class="lede fprod__hint">{{ 'collections.no_products_yet' | t }}</p>
+    {% endif %}
+
+    {% if section.settings.link_label != blank %}
+      {% liquid
+        assign target = section.settings.link_url
+        if target == blank
+          assign target = routes.all_products_collection_url
+        endif
+      %}
+      <a class="btn btn--secondary fprod__more" href="{{ target }}">
+        {{ section.settings.link_label }}
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+{% stylesheet %}
+  .fprod__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+    row-gap: var(--space-12);
+  }
+
+  .fprod__head,
+  .fprod__grid,
+  .fprod__more,
+  .fprod__hint {
+    grid-column: 2;
+  }
+
+  .fprod__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(var(--min-col, 260px), 100%), 1fr));
+    gap: var(--space-12) var(--space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fprod__more {
+    justify-self: start;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.featured_products",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "band",
+      "label": "t:labels.band",
+      "default": "band--brand-2",
+      "options": [
+        { "value": "band--page", "label": "t:options.band.page" },
+        { "value": "band--surface", "label": "t:options.band.surface" },
+        { "value": "band--brand-1", "label": "t:options.band.brand_1" },
+        { "value": "band--brand-2", "label": "t:options.band.brand_2" },
+        { "value": "band--brand-3", "label": "t:options.band.brand_3" },
+        { "value": "band--ink", "label": "t:options.band.ink" }
+      ]
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "t:labels.collection",
+      "info": "t:info.collection_fallback"
+    },
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "t:labels.kicker",
+      "default": "The range"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:labels.heading",
+      "default": "Everything we make"
+    },
+    {
+      "type": "range",
+      "id": "count",
+      "min": 2,
+      "max": 12,
+      "step": 1,
+      "label": "t:labels.count",
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "min_column_width",
+      "min": 180,
+      "max": 400,
+      "step": 10,
+      "unit": "px",
+      "label": "t:labels.min_column_width",
+      "info": "t:info.min_column_width",
+      "default": 260
+    },
+    {
+      "type": "checkbox",
+      "id": "show_vendor",
+      "label": "t:labels.show_vendor",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "link_label",
+      "label": "t:labels.link_label",
+      "default": "View all products"
+    },
+    {
+      "type": "url",
+      "id": "link_url",
+      "label": "t:labels.link_url",
+      "info": "t:info.all_products_fallback"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.featured_products"
+    }
+  ]
+}
+{% endschema %}

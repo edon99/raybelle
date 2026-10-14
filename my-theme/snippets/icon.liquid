@@ -1,0 +1,100 @@
+{% doc %}
+  Renders an inline SVG icon from the theme's icon set.
+
+  Icons are inline SVG rather than an icon font or emoji, so they inherit
+  `currentcolor` from the surrounding band and stay crisp at any size.
+
+  Decorative by default (`aria-hidden`), because the icons in this theme always
+  sit next to a text label. Pass `label` only when the icon is the sole content
+  of a control, which promotes it to `role="img"` with an accessible name.
+
+  @param {string} name - Icon key. One of: bolt, battery, clock, leaf, droplet, cup, sparkle, check, star, arrow-right, shield, globe
+  @param {string} [label] - Accessible name. Omit for decorative icons.
+  @param {number} [size] - Pixel size of the square viewport. Defaults to 24.
+  @param {string} [class] - Extra classes for the svg element.
+
+  @example
+  {% render 'icon', name: 'bolt' %}
+  {% render 'icon', name: 'star', size: 18 %}
+  {% render 'icon', name: 'cup', label: 'Brew size' %}
+{% enddoc %}
+
+{% liquid
+  assign icon_size = size | default: 24
+%}
+
+<svg
+  class="icon {{ class }}"
+  style="--icon-size: {{ icon_size }}px;"
+  width="{{ icon_size }}"
+  height="{{ icon_size }}"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  {% if label != blank %}
+    role="img" aria-label="{{ label | escape }}"
+  {% else %}
+    aria-hidden="true" focusable="false"
+  {% endif %}
+>
+  {% case name %}
+    {% when 'bolt' %}
+      <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />
+    {% when 'battery' %}
+      <rect x="2" y="7" width="16" height="10" rx="2" />
+      <path d="M22 11v2" />
+      <path d="M6 11v2" />
+      <path d="M10 11v2" />
+    {% when 'clock' %}
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    {% when 'leaf' %}
+      <path d="M11 20A7 7 0 0 1 4 13c0-5 4-9 16-9 0 10-4 14-9 14Z" />
+      <path d="M4 21c2-6 5-9 9-11" />
+    {% when 'droplet' %}
+      <path d="M12 3s6 5.5 6 10a6 6 0 0 1-12 0c0-4.5 6-10 6-10Z" />
+    {% when 'cup' %}
+      <path d="M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z" />
+      <path d="M16 9h2a3 3 0 0 1 0 6h-2" />
+      <path d="M7 2v3" />
+      <path d="M11 2v3" />
+    {% when 'sparkle' %}
+      <path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12 4.5 10 10 8.5 12 3Z" />
+      <path d="M18 17l.9 2.1L21 20l-2.1.9L18 23l-.9-2.1L15 20l2.1-.9L18 17Z" />
+    {% when 'check' %}
+      <path d="M4 12.5 9.5 18 20 6" />
+    {% when 'star' %}
+      <path
+        d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"
+        fill="currentColor"
+        stroke="none"
+      />
+    {% when 'arrow-right' %}
+      <path d="M4 12h15" />
+      <path d="m13 6 6 6-6 6" />
+    {% when 'shield' %}
+      <path d="M12 3l8 3v6c0 4.5-3.2 8.3-8 9-4.8-.7-8-4.5-8-9V6l8-3Z" />
+      <path d="m9 12 2 2 4-4" />
+    {% when 'globe' %}
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3c2.5 2.7 3.8 5.7 3.8 9S14.5 18.3 12 21c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3Z" />
+  {% endcase %}
+</svg>
+
+{% stylesheet %}
+  /*
+   * Width and height are set in CSS, not left to the presentation attributes.
+   * Attributes lose to any CSS rule, and every section's stylesheet is
+   * concatenated into one global sheet — a `.icon` rule in an unrelated section
+   * silently resized every icon on the site once already.
+   */
+  .icon {
+    flex: none;
+    width: var(--icon-size, 1em);
+    height: var(--icon-size, 1em);
+  }
+{% endstylesheet %}

@@ -1,0 +1,217 @@
+{% comment %}
+  Specification figures, set large.
+
+  The numeral is the whole design here, so the value and its unit are separate
+  settings: that keeps "18" in the display face at full size while "bar" stays
+  in the sans at label size, instead of the unit inheriting a 96pt serif.
+{% endcomment %}
+
+<div class="stats band {{ section.settings.band }} band-pad full-width">
+  <div class="stats__inner">
+    {% if section.settings.heading != blank or section.settings.kicker != blank %}
+      <header class="stats__head reveal">
+        {% if section.settings.kicker != blank %}
+          <p class="eyebrow">{{ section.settings.kicker }}</p>
+        {% endif %}
+        {% if section.settings.heading != blank %}
+          <h2 class="display section-title stats__title">{{ section.settings.heading }}</h2>
+        {% endif %}
+      </header>
+    {% endif %}
+
+    <dl class="stats__list">
+      {% for block in section.blocks %}
+        <div class="stats__item reveal" {{ block.shopify_attributes }}>
+          <dt class="stats__label">{{ block.settings.label }}</dt>
+          <dd class="stats__value">
+            <span class="display stats__number" data-count-to="{{ block.settings.value }}">{{ block.settings.value }}</span>
+            {% if block.settings.unit != blank %}
+              <span class="stats__unit">{{ block.settings.unit }}</span>
+            {% endif %}
+          </dd>
+        </div>
+      {% endfor %}
+    </dl>
+  </div>
+</div>
+
+{% stylesheet %}
+  .stats__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+    row-gap: var(--space-12);
+  }
+
+  .stats__head,
+  .stats__list {
+    grid-column: 2;
+  }
+
+  .stats__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .stats__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+    gap: var(--space-8) var(--space-6);
+    margin: 0;
+  }
+
+  .stats__item {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--color-hairline);
+  }
+
+  /* Label under the figure, but before it in the DOM so the pair reads
+     correctly to a screen reader. */
+  .stats__label {
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .stats__value {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin: 0;
+  }
+
+  .stats__number {
+    font-size: clamp(2.5rem, 2rem + 2.2vw, 3.75rem);
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  .stats__unit {
+    font-size: var(--text-base);
+    opacity: 0.7;
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  // Counts the figures up once, as they scroll into view. The final value is
+  // already in the markup, so with no script or reduced motion it is simply
+  // the number — nothing is hidden behind this.
+  (function () {
+    const targets = document.querySelectorAll('[data-count-to]');
+    if (!targets.length) return;
+    if (!('IntersectionObserver' in window)) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const run = (el) => {
+      const raw = el.dataset.countTo || '';
+      const target = parseFloat(raw.replace(/[^\d.]/g, ''));
+      if (!isFinite(target)) return;
+
+      // Keep any non-numeric parts, e.g. a leading currency mark.
+      const prefix = raw.slice(0, raw.search(/[\d.]/));
+      const suffix = raw.slice(raw.search(/[\d.]/) + String(target).length);
+      const decimals = (String(target).split('.')[1] || '').length;
+
+      const duration = 1100;
+      const start = performance.now();
+
+      const tick = (now) => {
+        const t = Math.min(1, (now - start) / duration);
+        // easeOutCubic: fast first, settles on the number
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = prefix + (target * eased).toFixed(decimals) + suffix;
+        if (t < 1) requestAnimationFrame(tick);
+        else el.textContent = raw;
+      };
+
+      requestAnimationFrame(tick);
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          run(entry.target);
+          io.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.4 }
+    );
+
+    targets.forEach((el) => io.observe(el));
+  })();
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:general.stats",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "band",
+      "label": "t:labels.band",
+      "default": "band--surface",
+      "options": [
+        { "value": "band--page", "label": "t:options.band.page" },
+        { "value": "band--surface", "label": "t:options.band.surface" },
+        { "value": "band--brand-1", "label": "t:options.band.brand_1" },
+        { "value": "band--brand-2", "label": "t:options.band.brand_2" },
+        { "value": "band--brand-3", "label": "t:options.band.brand_3" },
+        { "value": "band--ink", "label": "t:options.band.ink" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "t:labels.kicker"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:labels.heading"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "stat",
+      "name": "t:general.stat",
+      "settings": [
+        {
+          "type": "text",
+          "id": "value",
+          "label": "t:labels.value",
+          "info": "t:info.value",
+          "default": "18"
+        },
+        {
+          "type": "text",
+          "id": "unit",
+          "label": "t:labels.unit",
+          "info": "t:info.unit",
+          "default": "bar"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "t:labels.stat_label",
+          "default": "Pump pressure"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.stats",
+      "blocks": [
+        { "type": "stat", "settings": { "value": "18", "unit": "bar", "label": "Pump pressure" } },
+        { "type": "stat", "settings": { "value": "20", "unit": "shots", "label": "Per charge" } },
+        { "type": "stat", "settings": { "value": "690", "unit": "g", "label": "Carry weight" } },
+        { "type": "stat", "settings": { "value": "90", "unit": "sec", "label": "Heat to pour" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,129 @@
+{% doc %}
+  Renders a quantity control: minus, a number input, plus.
+
+  The number input is the real control and works with no JavaScript — the
+  buttons are an enhancement that adjust it and then fire a `change` event so
+  whatever is listening (the cart form, the add-to-cart form) reacts the same
+  way it would to typing.
+
+  `name` decides the behaviour: `updates[]` for a cart line, `quantity` for an
+  add-to-cart form.
+
+  @param {string} name - Form field name. Use 'updates[]' in the cart, 'quantity' in a product form.
+  @param {number} value - Current quantity.
+  @param {string} label - Accessible label, e.g. the product title. Read out with the quantity.
+  @param {number} [min] - Lowest allowed value. Defaults to 1; pass 0 in the cart so a line can be removed.
+  @param {string} [class] - Extra classes for the wrapper.
+
+  @example
+  {% render 'quantity-input', name: 'updates[]', value: item.quantity, label: item.title, min: 0 %}
+  {% render 'quantity-input', name: 'quantity', value: 1, label: product.title %}
+{% enddoc %}
+
+{% liquid
+  assign min_value = min | default: 1
+  if min == 0
+    assign min_value = 0
+  endif
+  assign uid = 'qty-' | append: name | append: '-' | append: value | append: label | handleize
+%}
+
+<div class="qty {{ class }}" data-quantity>
+  <button
+    class="qty__step"
+    type="button"
+    data-quantity-down
+    aria-label="{{ 'cart.decrease_for' | t: title: label }}"
+  >
+    <span aria-hidden="true">&minus;</span>
+  </button>
+
+  <label class="visually-hidden" for="{{ uid }}">{{ 'cart.quantity_for' | t: title: label }}</label>
+  <input
+    class="qty__input"
+    id="{{ uid }}"
+    type="number"
+    name="{{ name }}"
+    value="{{ value }}"
+    min="{{ min_value }}"
+    step="1"
+    inputmode="numeric"
+    data-quantity-input
+  >
+
+  <button
+    class="qty__step"
+    type="button"
+    data-quantity-up
+    aria-label="{{ 'cart.increase_for' | t: title: label }}"
+  >
+    <span aria-hidden="true">+</span>
+  </button>
+</div>
+
+{% stylesheet %}
+  .qty {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--color-hairline);
+  }
+
+  .qty__step {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: currentcolor;
+    font-size: var(--text-lg);
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color var(--dur-fast) var(--ease-out);
+  }
+
+  .qty__step:hover {
+    background-color: var(--color-hairline);
+  }
+
+  .qty__input {
+    width: 3.5rem;
+    border: 0;
+    background: none;
+    color: currentcolor;
+    text-align: center;
+    font-size: var(--text-base);
+    font-variant-numeric: tabular-nums;
+    border-radius: 0;
+  }
+
+  /* The steppers replace them; the spinners only crowd the field. */
+  .qty__input::-webkit-outer-spin-button,
+  .qty__input::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+
+  .qty__input[type='number'] {
+    appearance: textfield;
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  document.addEventListener('click', (event) => {
+    const step = event.target.closest('[data-quantity-down], [data-quantity-up]');
+    if (!step) return;
+
+    const wrapper = step.closest('[data-quantity]');
+    const input = wrapper && wrapper.querySelector('[data-quantity-input]');
+    if (!input) return;
+
+    const min = Number(input.min || 0);
+    const next = Number(input.value || 0) + (step.hasAttribute('data-quantity-up') ? 1 : -1);
+    input.value = String(Math.max(min, next));
+
+    // Let the form decide what to do, exactly as if the value had been typed.
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+{% endjavascript %}

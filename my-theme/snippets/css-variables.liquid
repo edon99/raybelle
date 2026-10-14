@@ -1,0 +1,222 @@
+{% comment %}
+  Renders the theme's design tokens as CSS custom properties on :root.
+
+  Every visual decision in the theme reads from these variables, so re-theming
+  for a different product means changing theme settings only — no Liquid edits.
+
+  The `--on-*` tokens are derived, not configured: each brand colour's perceived
+  brightness picks a foreground that stays legible, so a merchant can choose any
+  brand colour without breaking text contrast.
+{% endcomment %}
+
+{% liquid
+  comment
+    The two inks are the extremes of the palette, worked out by comparing
+    brightness — NOT `foreground_color` and white.
+
+    Assuming foreground is the dark one breaks the moment the palette is
+    dark-led, which this theme is: foreground is cream, so every light band
+    was being handed cream text on a cream ground and rendering invisible.
+    Deriving both ends keeps this correct whichever way round the palette runs.
+  endcomment
+  assign bg_brightness = settings.background_color | color_brightness
+  assign fg_brightness = settings.foreground_color | color_brightness
+
+  if bg_brightness > fg_brightness
+    assign light_ink = settings.background_color
+    assign dark_ink = settings.foreground_color
+  else
+    assign light_ink = settings.foreground_color
+    assign dark_ink = settings.background_color
+  endif
+
+  assign b1 = settings.brand_1 | color_brightness
+  assign b2 = settings.brand_2 | color_brightness
+  assign b3 = settings.brand_3 | color_brightness
+  assign bs = settings.surface_color | color_brightness
+
+  if b1 > 140
+    assign on_brand_1 = dark_ink
+  else
+    assign on_brand_1 = light_ink
+  endif
+
+  if b2 > 140
+    assign on_brand_2 = dark_ink
+  else
+    assign on_brand_2 = light_ink
+  endif
+
+  if b3 > 140
+    assign on_brand_3 = dark_ink
+  else
+    assign on_brand_3 = light_ink
+  endif
+
+  if bs > 140
+    assign on_surface = dark_ink
+  else
+    assign on_surface = light_ink
+  endif
+
+  comment
+    The accent (labels, numerals, rules) is brand_1. A single accent cannot
+    serve every band: clay reads at 5.2:1 on the near-black page but 2.7:1 on
+    cream and 1.9:1 on the brown band.
+
+    So each band gets its own variant, stepped away from its ground (darker on
+    a light band, lighter on a dark one) until `color_contrast` clears 4.5:1
+    against THAT band. Deriving per band rather than per kind matters: stepping
+    once against the worst dark band washed the accent out to near-cream on the
+    page ground, where the raw brand colour already passed. Stepping rather
+    than hardcoding keeps this working if the merchant picks another colour.
+  endcomment
+  assign accent_grounds = '' | append: settings.background_color | append: '|' | append: settings.surface_color | append: '|' | append: settings.brand_2 | append: '|' | append: settings.brand_3 | append: '|' | append: settings.foreground_color | split: '|'
+  assign accent_list = ''
+  for ground in accent_grounds
+    assign ground_b = ground | color_brightness
+    if ground_b > 140
+      assign found = settings.brand_1 | color_darken: 60
+    else
+      assign found = settings.brand_1 | color_lighten: 60
+    endif
+    for step in (0..12)
+      assign amount = step | times: 5
+      if ground_b > 140
+        assign candidate = settings.brand_1 | color_darken: amount
+      else
+        assign candidate = settings.brand_1 | color_lighten: amount
+      endif
+      assign cr = candidate | color_contrast: ground
+      if cr >= 4.5
+        assign found = candidate
+        break
+      endif
+    endfor
+    assign accent_list = accent_list | append: found | append: '|'
+  endfor
+  assign accent_list = accent_list | split: '|'
+
+  comment
+    Order matches accent_grounds. The brand-1 band takes its own ink instead
+    (see --accent-band-brand-1), because an accent on its own colour vanishes.
+  endcomment
+  assign accent_page = accent_list[0]
+  assign accent_surface = accent_list[1]
+  assign accent_brand_2 = accent_list[2]
+  assign accent_brand_3 = accent_list[3]
+  assign accent_ink = accent_list[4]
+
+  assign display_family = settings.type_display_font | strip
+  assign wordmark_family = settings.type_wordmark_font | strip
+%}
+
+{% style %}
+  {% # Loads all font variantions with display: swap %}
+  {{ settings.type_primary_font | font_face: font_display: 'swap' }}
+  {{ settings.type_primary_font | font_modify: 'weight', 'bold' | font_face: font_display: 'swap' }}
+  {{ settings.type_primary_font | font_modify: 'weight', 'bold' | font_modify: 'style', 'italic' | font_face: font_display: 'swap' }}
+  {{ settings.type_primary_font | font_modify: 'style', 'italic' | font_face: font_display: 'swap' }}
+  {{ settings.type_heading_font | font_face: font_display: 'swap' }}
+  {{ settings.type_heading_font | font_modify: 'weight', 'bold' | font_face: font_display: 'swap' }}
+
+  :root {
+    /* Typography */
+    --font-primary--family: {{ settings.type_primary_font.family }}, {{ settings.type_primary_font.fallback_families }};
+    --font-primary--style: {{ settings.type_primary_font.style }};
+    --font-primary--weight: {{ settings.type_primary_font.weight }};
+    --font-heading--family: {{ settings.type_heading_font.family }}, {{ settings.type_heading_font.fallback_families }};
+    --font-heading--weight: {{ settings.type_heading_font.weight }};
+    {% if display_family != blank %}
+      --font-display--family: '{{ display_family }}', var(--font-heading--family);
+    {% else %}
+      --font-display--family: var(--font-heading--family);
+    {% endif %}
+    --font-display--weight: {{ settings.type_display_weight }};
+    {% if wordmark_family != blank %}
+      --font-wordmark--family: '{{ wordmark_family }}', Didot, 'Bodoni MT', Georgia, serif;
+    {% else %}
+      --font-wordmark--family: var(--font-heading--family);
+    {% endif %}
+    --wordmark-width: {{ settings.wordmark_width }}px;
+    {% if settings.type_uppercase_display %}
+      --display-transform: uppercase;
+      --display-tracking: 0.02em;
+    {% else %}
+      --display-transform: none;
+      --display-tracking: -0.015em;
+    {% endif %}
+    {% comment %}
+      Optical size is a real axis, not a nicety, for a Didone like Bodoni Moda:
+      at display sizes the hairlines want the thin end (96), and a small
+      letterspaced label wants the sturdy end (8) or its serifs break up.
+      A font without the axis ignores these, so they are safe to always set.
+    {% endcomment %}
+    {% if settings.type_display_optical_size %}
+      --display-variation: 'opsz' 96;
+      --label-variation: 'opsz' 8;
+    {% else %}
+      --display-variation: normal;
+      --label-variation: normal;
+    {% endif %}
+
+    /* Fluid type scale — clamp() keeps headlines expressive without overflowing phones */
+    --text-xs: 0.75rem;
+    --text-sm: 0.9375rem;
+    --text-base: 1.0625rem;
+    --text-lg: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
+    --text-xl: clamp(1.3125rem, 1.2rem + 0.6vw, 1.625rem);
+    --text-2xl: clamp(1.75rem, 1.45rem + 1.3vw, 2.5rem);
+    --text-3xl: clamp(2rem, 1.55rem + 2vw, 3.25rem);
+    --text-4xl: clamp(2.5rem, 1.85rem + 2.9vw, 4.5rem);
+
+    /* Layout */
+    --page-width: {{ settings.max_page_width }};
+    --page-margin: clamp(20px, 4vw, {{ settings.min_page_margin }}px);
+    --section-rhythm: {{ settings.section_rhythm }}px;
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+
+    /* Colour */
+    --color-background: {{ settings.background_color }};
+    --color-foreground: {{ settings.foreground_color }};
+    --color-surface: {{ settings.surface_color }};
+    --color-on-surface: {{ on_surface }};
+    --color-brand-1: {{ settings.brand_1 }};
+    --color-support: {{ settings.support_color }};
+    --accent-band-page: {{ accent_page }};
+    --accent-band-surface: {{ accent_surface }};
+    --accent-band-brand-1: {{ on_brand_1 }};
+    --accent-band-brand-2: {{ accent_brand_2 }};
+    --accent-band-brand-3: {{ accent_brand_3 }};
+    --accent-band-ink: {{ accent_ink }};
+    --color-accent: var(--accent-band-page);
+    --color-on-brand-1: {{ on_brand_1 }};
+    --color-brand-2: {{ settings.brand_2 }};
+    --color-on-brand-2: {{ on_brand_2 }};
+    --color-brand-3: {{ settings.brand_3 }};
+    --color-on-brand-3: {{ on_brand_3 }};
+    --color-muted: {{ settings.foreground_color | color_mix: settings.background_color, 55 }};
+    --color-hairline: {{ settings.foreground_color | color_mix: settings.background_color, 18 }};
+
+    /* Shape */
+    --style-border-radius-inputs: {{ settings.input_corner_radius }}px;
+    --radius-block: {{ settings.block_corner_radius }}px;
+    --radius-pill: 999px;
+    --outline-width: {{ settings.outline_width }}px;
+    --outline: var(--outline-width) solid var(--color-foreground);
+
+    /* Motion — one duration per intent, not one duration everywhere */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --dur-fast: 120ms;
+    --dur-base: 220ms;
+    --dur-slow: 420ms;
+  }
+{% endstyle %}

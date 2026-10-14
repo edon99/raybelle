@@ -1,0 +1,115 @@
+{% comment %}
+  One review, set large.
+
+  A rail of small cards asks the reader to work; one quote at display size is
+  read. This carries the social proof, and `testimonials` follows underneath
+  with the rest at a glanceable size.
+{% endcomment %}
+
+<div class="pq band {{ section.settings.band }} band-pad full-width">
+  <div class="pq__inner">
+    <figure class="pq__figure reveal">
+      {% if section.settings.rating > 0 %}
+        <span
+          class="pq__stars"
+          role="img"
+          aria-label="{{ 'product.rating_out_of_five' | t: rating: section.settings.rating }}"
+        >
+          {% for i in (1..section.settings.rating) %}
+            {% render 'icon', name: 'star', size: 16 %}
+          {% endfor %}
+        </span>
+      {% endif %}
+
+      <blockquote class="display pq__quote">{{ section.settings.quote }}</blockquote>
+
+      {% if section.settings.attribution != blank %}
+        <figcaption class="pq__by">{{ section.settings.attribution }}</figcaption>
+      {% endif %}
+    </figure>
+  </div>
+</div>
+
+{% stylesheet %}
+  .pq__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+  }
+
+  .pq__figure {
+    grid-column: 2;
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    gap: var(--space-6);
+    margin: 0;
+  }
+
+  .pq__stars {
+    display: inline-flex;
+    gap: 3px;
+    color: var(--color-brand-1);
+  }
+
+  .pq__quote {
+    margin: 0;
+    font-size: clamp(1.5rem, 1.1rem + 1.9vw, 2.75rem);
+    max-width: 22ch;
+  }
+
+  .pq__by {
+    font-size: var(--text-sm);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.65;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.pull_quote",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "band",
+      "label": "t:labels.band",
+      "default": "band--surface",
+      "options": [
+        { "value": "band--page", "label": "t:options.band.page" },
+        { "value": "band--surface", "label": "t:options.band.surface" },
+        { "value": "band--brand-1", "label": "t:options.band.brand_1" },
+        { "value": "band--brand-2", "label": "t:options.band.brand_2" },
+        { "value": "band--brand-3", "label": "t:options.band.brand_3" },
+        { "value": "band--ink", "label": "t:options.band.ink" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "rating",
+      "min": 0,
+      "max": 5,
+      "step": 1,
+      "label": "t:labels.rating",
+      "default": 5
+    },
+    {
+      "type": "textarea",
+      "id": "quote",
+      "label": "t:labels.quote",
+      "default": "I did not expect crema out of something this small. It is a proper shot."
+    },
+    {
+      "type": "text",
+      "id": "attribution",
+      "label": "t:labels.attribution",
+      "default": "Marta K. — verified buyer"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.pull_quote"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,166 @@
+{% doc %}
+  Renders a product card for a grid.
+
+  Used by the collection template and the featured-products section, so a
+  product looks the same wherever it is listed.
+
+  The image sits on a `brand-3` panel with `mix-blend-mode: multiply` — the
+  same treatment as the hero — because a cut-out product photo on white needs
+  a light ground, and the page ground is dark.
+
+  @param {object} product - The product to render.
+  @param {boolean} [show_vendor] - Show the vendor above the title.
+  @param {boolean} [show_second_image] - Swap to the second image on hover, when the product has one.
+
+  @example
+  {% render 'product-card', product: product %}
+  {% render 'product-card', product: product, show_second_image: true %}
+{% enddoc %}
+
+<article class="pcard">
+  <a class="pcard__link" href="{{ product.url }}">
+    <span class="pcard__frame">
+      {% if product.featured_image != blank %}
+        {{
+          product.featured_image
+          | image_url: width: 800
+          | image_tag: class: 'pcard__img', widths: '200,400,600,800', sizes: '(min-width: 900px) 30vw, 45vw', loading: 'lazy', alt: product.featured_image.alt | default: product.title
+        }}
+
+        {% if show_second_image and product.images.size > 1 %}
+          {{
+            product.images[1]
+            | image_url: width: 800
+            | image_tag: class: 'pcard__img pcard__img--alt', widths: '200,400,600,800', sizes: '(min-width: 900px) 30vw, 45vw', loading: 'lazy', alt: ''
+          }}
+        {% endif %}
+      {% else %}
+        {{ 'product-1' | placeholder_svg_tag: 'pcard__img' }}
+      {% endif %}
+
+      {% if product.available == false %}
+        <span class="pcard__flag">{{ 'product.sold_out' | t }}</span>
+      {% elsif product.compare_at_price > product.price %}
+        <span class="pcard__flag pcard__flag--sale">{{ 'product.on_sale' | t }}</span>
+      {% endif %}
+    </span>
+
+    <span class="pcard__body">
+      {% if show_vendor and product.vendor != blank %}
+        <span class="pcard__vendor">{{ product.vendor }}</span>
+      {% endif %}
+
+      <span class="pcard__title">{{ product.title }}</span>
+
+      <span class="pcard__price">
+        {% if product.price_varies %}
+          {{ 'product.from_price' | t: price: product.price_min | money }}
+        {% else %}
+          {{ product.price | money }}
+        {% endif %}
+
+        {% if product.compare_at_price > product.price %}
+          <s class="pcard__was">{{ product.compare_at_price | money }}</s>
+        {% endif %}
+      </span>
+    </span>
+  </a>
+</article>
+
+{% stylesheet %}
+  .pcard__link {
+    display: grid;
+    gap: var(--space-4);
+    color: currentcolor;
+    text-decoration: none;
+  }
+
+  /* A cut-out photo needs a light ground; the page ground is dark. */
+  .pcard__frame {
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    aspect-ratio: 3 / 4;
+    background-color: var(--color-brand-3);
+  }
+
+  .pcard__link:hover .pcard__img,
+  .pcard__link:focus-visible .pcard__img {
+    transform: scale(1.04);
+  }
+
+  .pcard__img {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8%;
+    mix-blend-mode: multiply;
+    transition:
+      opacity var(--dur-base) var(--ease-out),
+      transform var(--dur-slow) var(--ease-out);
+  }
+
+  .pcard__img--alt {
+    opacity: 0;
+  }
+
+  .pcard__link:hover .pcard__img--alt,
+  .pcard__link:focus-visible .pcard__img--alt {
+    opacity: 1;
+  }
+
+  .pcard__flag {
+    position: absolute;
+    inset-block-start: var(--space-3);
+    inset-inline-start: var(--space-3);
+    z-index: 2;
+    padding: var(--space-1) var(--space-3);
+    background-color: var(--color-foreground);
+    color: var(--color-background);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .pcard__flag--sale {
+    background-color: var(--color-brand-1);
+    color: var(--color-on-brand-1);
+  }
+
+  .pcard__body {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .pcard__vendor {
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  .pcard__title {
+    font-size: var(--text-lg);
+  }
+
+  .pcard__link:hover .pcard__title {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .pcard__price {
+    font-family: var(--font-display--family);
+    font-variation-settings: var(--display-variation);
+    font-size: var(--text-lg);
+    color: var(--color-accent, var(--color-brand-1));
+  }
+
+  .pcard__was {
+    font-family: var(--font-primary--family);
+    font-size: var(--text-sm);
+    opacity: 0.5;
+    margin-inline-start: var(--space-2);
+  }
+{% endstylesheet %}

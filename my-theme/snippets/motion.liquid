@@ -1,0 +1,77 @@
+{% doc %}
+  Site-wide motion: scroll reveals and the scrolled-header state.
+
+  Rendered once from `layout/theme.liquid`. Behaviour only — the `.reveal`
+  styles live in critical.css because they are a shared primitive used by a
+  dozen sections, and the scrolled-header styles live in header.liquid,
+  which owns that class. Everything dies under `prefers-reduced-motion`.
+
+  Why JavaScript rather than `animation-timeline: view()` alone: view timelines
+  ship in Chrome and Edge but not Safari or Firefox, so a CSS-only reveal
+  animates for roughly half of visitors and does nothing for the rest. An
+  IntersectionObserver behaves the same everywhere.
+
+  Nothing is hidden unless the script is running and able to reveal it: the
+  `motion-ready` class is only added once the observer exists, and a timeout
+  reveals everything regardless if anything goes wrong.
+
+  @example
+  {% render 'motion' %}
+{% enddoc %}
+
+{% javascript %}
+  (function () {
+    const root = document.documentElement;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // ---- scroll reveals -------------------------------------------------
+    if ('IntersectionObserver' in window && !reduced.matches) {
+      const targets = document.querySelectorAll('.reveal');
+      if (targets.length) {
+        root.classList.add('motion-ready');
+
+        const reveal = (el) => el.classList.add('is-in');
+
+        /*
+         * Failsafe for anything already on screen that the observer did not
+         * reveal. It deliberately does NOT touch elements below the fold —
+         * those are meant to wait — and it is not cancelled by the observer
+         * firing, because the observer's first callback runs immediately for
+         * off-screen targets too and would cancel the guard before it helped.
+         */
+        setTimeout(() => {
+          targets.forEach((el) => {
+            const box = el.getBoundingClientRect();
+            if (box.top < window.innerHeight && box.bottom > 0) reveal(el);
+          });
+        }, 1800);
+
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              reveal(entry.target);
+              io.unobserve(entry.target);
+            });
+          },
+          { rootMargin: '0px 0px -12% 0px', threshold: 0.05 }
+        );
+
+        targets.forEach((el) => io.observe(el));
+      }
+    }
+
+    // ---- scrolled header ------------------------------------------------
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        root.classList.toggle('is-scrolled', window.scrollY > 8);
+        ticking = false;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+{% endjavascript %}

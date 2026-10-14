@@ -1,0 +1,196 @@
+{% comment %}
+  Numbered feature rows.
+
+  Deliberately not icon cards. A row of four icon tiles reads as a dashboard,
+  and an icon set that has to cover "18 bar pressure" and "cleans in ten
+  seconds" ends up generic. Numbers plus a rule carry the same structure
+  without asking a pictogram to mean something it cannot.
+
+  Index comes from the loop, so reordering in the theme editor renumbers
+  automatically and the sequence can never drift.
+{% endcomment %}
+
+<div class="features band {{ section.settings.band }} band-pad full-width">
+  <div class="features__inner">
+    <header class="features__head reveal">
+      {% if section.settings.kicker != blank %}
+        <p class="eyebrow">{{ section.settings.kicker }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank %}
+        <h2 class="display section-title features__title">{{ section.settings.heading }}</h2>
+      {% endif %}
+      {% if section.settings.body != blank %}
+        <div class="lede features__body">{{ section.settings.body }}</div>
+      {% endif %}
+    </header>
+
+    <ol class="features__list">
+      {% for block in section.blocks %}
+        <li class="features__item reveal" {{ block.shopify_attributes }}>
+          <span class="features__num" aria-hidden="true">
+            {{- forloop.index | prepend: '0' | slice: -2, 2 -}}
+          </span>
+          <h3 class="features__item-title">{{ block.settings.heading }}</h3>
+          {% if block.settings.text != blank %}
+            <p class="features__item-text">{{ block.settings.text }}</p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+</div>
+
+{% stylesheet %}
+  .features__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+    row-gap: var(--space-12);
+  }
+
+  .features__head,
+  .features__list {
+    grid-column: 2;
+  }
+
+  .features__title {
+    margin-block: var(--space-3);
+  }
+
+  .features__list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .features__item {
+    display: grid;
+    gap: var(--space-1) var(--space-8);
+    padding-block: var(--space-6);
+    border-block-start: 1px solid var(--color-hairline);
+  }
+
+  .features__item:last-child {
+    border-block-end: 1px solid var(--color-hairline);
+  }
+
+  .features__num {
+    font-family: var(--font-display--family);
+    font-variation-settings: var(--display-variation);
+    font-size: var(--text-lg);
+    line-height: 1.2;
+    color: var(--color-brand-1);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  .features__item-title {
+    font-size: var(--text-lg);
+  }
+
+  .features__item-text {
+    opacity: 0.7;
+  }
+
+  @media (min-width: 720px) {
+    .features__item {
+      grid-template-columns: 4ch minmax(16ch, 26ch) 1fr;
+      align-items: baseline;
+      column-gap: var(--space-12);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.feature_grid",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "band",
+      "label": "t:labels.band",
+      "default": "band--surface",
+      "options": [
+        { "value": "band--page", "label": "t:options.band.page" },
+        { "value": "band--surface", "label": "t:options.band.surface" },
+        { "value": "band--brand-1", "label": "t:options.band.brand_1" },
+        { "value": "band--brand-2", "label": "t:options.band.brand_2" },
+        { "value": "band--brand-3", "label": "t:options.band.brand_3" },
+        { "value": "band--ink", "label": "t:options.band.ink" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "t:labels.kicker",
+      "default": "Why it works"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:labels.heading",
+      "default": "A small machine that makes no excuses"
+    },
+    {
+      "type": "richtext",
+      "id": "body",
+      "label": "t:labels.body"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "feature",
+      "name": "t:general.feature",
+      "settings": [
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:labels.heading",
+          "default": "Feature"
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "t:labels.text",
+          "default": "One clear sentence about why this matters."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.feature_grid",
+      "blocks": [
+        {
+          "type": "feature",
+          "settings": {
+            "heading": "Eighteen bar pressure",
+            "text": "Enough to pull a genuine crema, not a long black in disguise."
+          }
+        },
+        {
+          "type": "feature",
+          "settings": {
+            "heading": "Charges over USB-C",
+            "text": "Around twenty shots between charges, from the cable already in your bag."
+          }
+        },
+        {
+          "type": "feature",
+          "settings": {
+            "heading": "Grounds or capsules",
+            "text": "Eight grams in the basket, or a capsule in the adapter. Both are in the box."
+          }
+        },
+        {
+          "type": "feature",
+          "settings": {
+            "heading": "Cleans in ten seconds",
+            "text": "Water, one pulse, tip it out. No brushes and no disassembly."
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

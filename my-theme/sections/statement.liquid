@@ -1,0 +1,185 @@
+{% comment %}
+  Full-bleed image with one line over it.
+
+  The page is mostly type on flat grounds; this is the single photographic
+  moment that breaks the rhythm. One sentence only — it is a breath between
+  sections, not a place to explain anything.
+
+  The band sets its own aspect ratio and positions both the image and the
+  overlay absolutely. That is deliberate: `height: 100%` on a grid child
+  resolves against an auto row, and an auto row is sized by the image's
+  intrinsic height, which silently grows the band to the full height of the
+  photo and centres the caption outside the visible area.
+{% endcomment %}
+
+{% liquid
+  assign media = section.settings.image
+  assign has_asset = false
+  if media == blank and section.settings.demo_asset != blank
+    assign has_asset = true
+  endif
+%}
+
+<div
+  class="statement full-width"
+  style="--shade: {{ section.settings.overlay_opacity | divided_by: 100.0 }}; --ratio: {{ section.settings.ratio }};"
+>
+  {% if media != blank %}
+    {{
+      media
+      | image_url: width: 2000
+      | image_tag: class: 'statement__img', widths: '800,1200,1600,2000', sizes: '100vw', loading: 'lazy'
+    }}
+  {% elsif has_asset %}
+    {% comment %} Bundled demo asset — see assets/DEMO-IMAGES.txt {% endcomment %}
+    <img
+      class="statement__img"
+      src="{{ section.settings.demo_asset | asset_url }}"
+      alt=""
+      width="1400"
+      height="933"
+      loading="lazy"
+    >
+  {% endif %}
+
+  <div class="statement__overlay">
+    {% if section.settings.text != blank %}
+      <p class="display statement__text">{{ section.settings.text }}</p>
+    {% endif %}
+  </div>
+</div>
+
+{% stylesheet %}
+  .statement {
+    position: relative;
+    width: 100%;
+    aspect-ratio: var(--ratio, 16 / 7);
+    max-height: 62vh;
+    min-height: 300px;
+    overflow: hidden;
+    background-color: var(--color-brand-2);
+  }
+
+  .statement__img,
+  .statement__overlay {
+    position: absolute;
+    inset: 0;
+  }
+
+  .statement__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /*
+   * A slow scale across the scroll, tied to the element's own view timeline.
+   * Where view timelines are unsupported the image simply sits still, which is
+   * the correct fallback for something purely decorative.
+   */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .statement__img {
+        animation: statement-drift linear both;
+        animation-timeline: view();
+        animation-range: cover 0% cover 100%;
+      }
+    }
+  }
+
+  @keyframes statement-drift {
+    from {
+      transform: scale(1.12) translateY(-1.5%);
+    }
+    to {
+      transform: scale(1) translateY(1.5%);
+    }
+  }
+
+  .statement__text {
+    animation: statement-text 900ms var(--ease-out) both;
+  }
+
+  @keyframes statement-text {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .statement__overlay {
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: var(--page-margin);
+    background: linear-gradient(
+      to bottom,
+      rgb(0 0 0 / calc(var(--shade, 0.5) * 0.45)),
+      rgb(0 0 0 / var(--shade, 0.5))
+    );
+  }
+
+  .statement__text {
+    font-size: clamp(1.75rem, 1.2rem + 2.6vw, 3.5rem);
+    max-width: 18ch;
+    color: var(--color-foreground);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.statement",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "text",
+      "label": "t:labels.statement_text",
+      "info": "t:info.statement_text",
+      "default": "Ninety seconds from cold water to crema."
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "t:labels.image"
+    },
+    {
+      "type": "text",
+      "id": "demo_asset",
+      "label": "t:labels.demo_asset",
+      "info": "t:info.demo_asset"
+    },
+    {
+      "type": "select",
+      "id": "ratio",
+      "label": "t:labels.ratio",
+      "default": "16 / 7",
+      "options": [
+        { "value": "21 / 9", "label": "t:options.ratio.wide" },
+        { "value": "16 / 7", "label": "t:options.ratio.standard" },
+        { "value": "3 / 2", "label": "t:options.ratio.tall" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "overlay_opacity",
+      "min": 0,
+      "max": 90,
+      "step": 5,
+      "unit": "%",
+      "label": "t:labels.overlay_opacity",
+      "info": "t:info.overlay_opacity",
+      "default": 70
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.statement"
+    }
+  ]
+}
+{% endschema %}

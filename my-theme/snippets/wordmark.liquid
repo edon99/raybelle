@@ -1,0 +1,103 @@
+{% doc %}
+  Renders the Raybelle wordmark as inline SVG.
+
+  It must be inlined rather than referenced as `<img src="logo.svg">`: the
+  supplied artwork sets its type in Bodoni Moda and pulls the face with an
+  `@import` inside the file. Browsers render `<img>`-loaded SVG in a secure
+  static mode that blocks external CSS and fonts, so as an image the wordmark
+  silently falls back to Times. Inlined, it uses the page's own font stack.
+
+  The gold gradient needs a document-unique id, hence `uniq`. Pass `gold: false`
+  on a band where the gradient has too little contrast, and the mark inherits
+  `currentcolor` from the band instead.
+
+  @param {string} [uniq] - Suffix for the gradient id. Required if more than one wordmark is on the page.
+  @param {boolean} [gold] - Fill with the gold gradient. Defaults to true; false uses currentcolor.
+  @param {boolean} [show_sub] - Render the letterspaced sub-line under the name.
+  @param {string} [class] - Extra classes for the svg element.
+
+  @example
+  {% render 'wordmark' %}
+  {% render 'wordmark', uniq: 'footer', gold: false %}
+{% enddoc %}
+
+{% liquid
+  assign gradient_id = 'wordmark-gold-' | append: uniq | default: 'wordmark-gold'
+  assign use_gold = true
+  if gold == false
+    assign use_gold = false
+  endif
+
+  assign name = settings.wordmark_text | default: shop.name
+  assign sub = settings.wordmark_subtext
+
+  if use_gold
+    assign fill = 'url(#' | append: gradient_id | append: ')'
+  else
+    assign fill = 'currentColor'
+  endif
+
+  if show_sub and sub != blank
+    assign view_box = '0 0 1100 220'
+  else
+    assign view_box = '0 0 1100 150'
+  endif
+%}
+
+<svg
+  class="wordmark {{ class }}"
+  viewBox="{{ view_box }}"
+  role="img"
+  aria-label="{{ name | escape }}"
+  fill="none"
+>
+  {% if use_gold %}
+    <defs>
+      <linearGradient id="{{ gradient_id }}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="{{ settings.wordmark_gold_1 }}" />
+        <stop offset="30%" stop-color="{{ settings.wordmark_gold_2 }}" />
+        <stop offset="50%" stop-color="{{ settings.wordmark_gold_3 }}" />
+        <stop offset="70%" stop-color="{{ settings.wordmark_gold_2 }}" />
+        <stop offset="100%" stop-color="{{ settings.wordmark_gold_4 }}" />
+      </linearGradient>
+    </defs>
+  {% endif %}
+
+  <g transform="translate(550, 0)">
+    <text x="0" y="115" class="wordmark__name" fill="{{ fill }}">{{ name }}</text>
+    {% if show_sub and sub != blank %}
+      <text x="0" y="180" class="wordmark__sub" fill="{{ fill }}">{{ sub }}</text>
+    {% endif %}
+  </g>
+</svg>
+
+{% stylesheet %}
+  .wordmark {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /*
+   * `opsz` is Bodoni Moda's optical-size axis. At display sizes the hairlines
+   * should be at their thinnest (96); the sub-line is set small, so it asks for
+   * the sturdier low end (12) or its serifs break up on screen.
+   */
+  .wordmark__name {
+    font-family: var(--font-wordmark--family);
+    font-variation-settings: 'opsz' 96;
+    font-weight: 600;
+    font-size: 105px;
+    letter-spacing: 0.18em;
+    text-anchor: middle;
+  }
+
+  .wordmark__sub {
+    font-family: var(--font-wordmark--family);
+    font-variation-settings: 'opsz' 12;
+    font-weight: 400;
+    font-size: 24px;
+    letter-spacing: 0.55em;
+    text-anchor: middle;
+  }
+{% endstylesheet %}

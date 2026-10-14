@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="canonical" href="{{ canonical_url }}">
+
+    {% # Inlined CSS Variables %}
+    {% render 'css-variables' %}
+
+    {% comment %}
+      Font preloading:
+      1. Preconnect to font CDN for faster connection
+      2. Preload only the critical font variant (base weight)
+      3. Additional variants load on-demand via @font-face
+    {% endcomment %}
+    {% unless settings.type_primary_font.system? %}
+      <link rel="preconnect" href="https://fonts.shopifycdn.com" crossorigin>
+
+      {% comment %} Preload the base font variant for initial page render {% endcomment %}
+      {{ settings.type_primary_font | font_url | preload_tag: as: 'font', crossorigin: 'anonymous' }}
+    {% endunless %}
+
+    {% comment %}
+      Optional display face for headlines.
+
+      Shopify's font_picker only exposes its own library, which does not carry
+      every expressive display face. This setting takes any Google Fonts family
+      name and loads it just for headlines; leaving it blank falls back to the
+      picked heading font, so the theme never depends on the external request.
+    {% endcomment %}
+    {% liquid
+      assign google_families = ''
+
+      assign display_family = settings.type_display_font | strip
+      assign wordmark_family = settings.type_wordmark_font | strip
+
+      comment
+        When the display and wordmark faces are the same family — the usual
+        case, since the wordmark sets the site's voice — they must be requested
+        once, together, with the optical-size axis either side needs. Asking
+        twice would have the second request win and silently drop the axis.
+      endcomment
+      assign shared_family = false
+      if display_family != blank and display_family == wordmark_family
+        assign shared_family = true
+      endif
+
+      if display_family != blank
+        assign display_url_family = display_family | replace: ' ', '+'
+        assign wants_opsz = false
+        if settings.type_display_optical_size
+          assign wants_opsz = true
+        endif
+        if shared_family and settings.type_wordmark_optical_size
+          assign wants_opsz = true
+        endif
+
+        if wants_opsz
+          assign part = display_url_family | append: ':opsz,wght@6..96,400;6..96,500;6..96,600;6..96,700'
+        else
+          assign part = display_url_family | append: ':wght@400;500;600;700'
+        endif
+        assign google_families = google_families | append: '&family=' | append: part
+      endif
+
+      comment
+        The wordmark face is requested with its optical-size axis when the
+        family has one, so `font-variation-settings: 'opsz'` in the wordmark
+        snippet actually resolves. Without the axis in the request, Google
+        serves a static instance and the setting is silently ignored.
+      endcomment
+      if wordmark_family != blank and shared_family == false
+        assign wordmark_url_family = wordmark_family | replace: ' ', '+'
+        if settings.type_wordmark_optical_size
+          assign part = wordmark_url_family | append: ':opsz,wght@6..96,400;6..96,600;6..96,700'
+        else
+          assign part = wordmark_url_family | append: ':wght@400;600;700'
+        endif
+        assign google_families = google_families | append: '&family=' | append: part
+      endif
+
+      assign google_href = ''
+      if google_families != blank
+        assign stripped = google_families | remove_first: '&'
+        assign google_href = 'https://fonts.googleapis.com/css2?' | append: stripped | append: '&display=swap'
+      endif
+    %}
+
+    {% if google_href != blank %}
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link rel="stylesheet" href="{{ google_href }}" media="print" onload="this.media='all'">
+      <noscript>
+        <link rel="stylesheet" href="{{ google_href }}">
+      </noscript>
+    {% endif %}
+
+    {% # Load and preload the critical CSS %}
+    {{ 'critical.css' | asset_url | stylesheet_tag: preload: true }}
+
+    {% # Social, title, etc. %}
+    {% render 'meta-tags' %}
+
+    {{ content_for_header }}
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main-content">{{ 'general.skip_to_content' | t }}</a>
+
+    {% sections 'header-group' %}
+
+    <main id="main-content">
+      {{ content_for_layout }}
+    </main>
+
+    {% sections 'footer-group' %}
+
+    {% comment %} Scroll reveals and the scrolled-header state. {% endcomment %}
+    {% render 'motion' %}
+  </body>
+</html>

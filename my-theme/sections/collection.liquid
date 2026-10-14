@@ -1,0 +1,166 @@
+{% comment %}
+  Collection page — the grid behind /collections/all and every other collection.
+
+  https://shopify.dev/docs/storefronts/themes/architecture/templates/collection
+{% endcomment %}
+
+<div class="coll band band--page band-pad full-width">
+  <div class="coll__inner">
+    <header class="coll__head">
+      <p class="eyebrow">
+        {%- if collection.handle == 'all' -%}
+          {{ 'collections.all_products' | t }}
+        {%- else -%}
+          {{ 'collections.title' | t }}
+        {%- endif -%}
+      </p>
+      <h1 class="display section-title">{{ collection.title }}</h1>
+
+      {% if collection.description != blank %}
+        <div class="lede coll__desc">{{ collection.description }}</div>
+      {% endif %}
+    </header>
+
+    {% paginate collection.products by section.settings.per_page %}
+      {% if collection.products.size > 0 %}
+        <p class="coll__count">
+          {{ 'collections.count' | t: count: collection.products_count }}
+        </p>
+
+        <ul class="coll__grid" style="--min-col: {{ section.settings.min_column_width }}px;">
+          {% for product in collection.products %}
+            <li class="reveal">
+              {% render 'product-card',
+                product: product,
+                show_vendor: section.settings.show_vendor,
+                show_second_image: section.settings.show_second_image
+              %}
+            </li>
+          {% endfor %}
+        </ul>
+
+        {% if paginate.pages > 1 %}
+          <nav class="coll__pagination" aria-label="{{ 'collections.pagination' | t }}">
+            {{ paginate | default_pagination }}
+          </nav>
+        {% endif %}
+      {% else %}
+        <p class="lede">{{ 'collections.empty' | t }}</p>
+      {% endif %}
+    {% endpaginate %}
+  </div>
+</div>
+
+{% stylesheet %}
+  .coll__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+    row-gap: var(--space-8);
+  }
+
+  .coll__head,
+  .coll__grid,
+  .coll__count,
+  .coll__pagination,
+  .coll__inner > .lede {
+    grid-column: 2;
+  }
+
+  .coll__desc {
+    margin-block-start: var(--space-4);
+  }
+
+  .coll__count {
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    padding-block-end: var(--space-4);
+    border-block-end: 1px solid var(--color-hairline);
+  }
+
+  .coll__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(var(--min-col, 260px), 100%), 1fr));
+    gap: var(--space-12) var(--space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .coll__pagination {
+    padding-block-start: var(--space-8);
+    border-block-start: 1px solid var(--color-hairline);
+  }
+
+  /* default_pagination renders bare anchors; give them a target size. */
+  .coll__pagination .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .coll__pagination a,
+  .coll__pagination span {
+    display: inline-grid;
+    place-items: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: var(--space-2);
+    color: currentcolor;
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+
+  .coll__pagination a:hover {
+    border-color: var(--color-hairline);
+  }
+
+  .coll__pagination .current {
+    border-color: var(--color-accent, var(--color-brand-1));
+    color: var(--color-accent, var(--color-brand-1));
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.collection",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "range",
+      "id": "per_page",
+      "min": 8,
+      "max": 48,
+      "step": 4,
+      "label": "t:labels.per_page",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "min_column_width",
+      "min": 180,
+      "max": 400,
+      "step": 10,
+      "unit": "px",
+      "label": "t:labels.min_column_width",
+      "info": "t:info.min_column_width",
+      "default": 260
+    },
+    {
+      "type": "checkbox",
+      "id": "show_vendor",
+      "label": "t:labels.show_vendor",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "show_second_image",
+      "label": "t:labels.show_second_image",
+      "info": "t:info.show_second_image",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

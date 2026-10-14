@@ -1,0 +1,76 @@
+<footer class="site-footer">
+  <div class="footer__copyright">
+    &copy;
+    {{ 'now' | date: '%Y' }}
+    {{ shop.name | link_to: routes.root_url }}, {{ powered_by_link }}
+  </div>
+
+  <nav class="footer__links" aria-label="{{ 'general.footer_nav' | t }}">
+    {% if section.settings.menu.links.size > 0 %}
+      {% for link in section.settings.menu.links %}
+        <a href="{{ link.url }}">{{ link.title }}</a>
+      {% endfor %}
+    {% else %}
+      {% comment %} Single-product store: no catalogue links. {% endcomment %}
+      <a href="{{ routes.root_url }}#faq">{{ 'general.nav_faq' | t }}</a>
+      <a href="{{ routes.search_url }}">{{ 'search.title' | t }}</a>
+    {% endif %}
+  </nav>
+
+  <div class="footer__payment">
+    {% if section.settings.show_payment_icons %}
+      {% for type in shop.enabled_payment_types %}
+        {{ type | payment_type_svg_tag }}
+      {% endfor %}
+    {% endif %}
+  </div>
+</footer>
+
+{% stylesheet %}
+  /* Scoped to .site-footer for the same reason as the header. */
+  .site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-block: var(--space-8);
+    margin-block-start: 0;
+    border-block-start: 1px solid var(--color-hairline);
+    font-size: var(--text-sm);
+  }
+  .site-footer a {
+    text-decoration: none;
+    color: currentcolor;
+  }
+  .site-footer a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .site-footer .footer__links,
+  .site-footer .footer__payment {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.footer",
+  "settings": [
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "t:labels.menu"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_payment_icons",
+      "label": "t:labels.show_payment_icons",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

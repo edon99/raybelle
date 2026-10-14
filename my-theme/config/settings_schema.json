@@ -1,0 +1,300 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Raybelle",
+    "theme_version": "1.0.0",
+    "theme_author": "Raybelle",
+    "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
+    "theme_support_url": "https://support.shopify.com/"
+  },
+  {
+    "name": "t:general.product",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "t:info.featured_product"
+      },
+      {
+        "type": "product",
+        "id": "featured_product",
+        "label": "t:labels.featured_product"
+      },
+      {
+        "type": "text",
+        "id": "product_kicker",
+        "label": "t:labels.product_kicker",
+        "info": "t:info.product_kicker",
+        "default": "Portable espresso"
+      }
+    ]
+  },
+  {
+    "name": "t:general.wordmark",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "t:info.wordmark"
+      },
+      {
+        "type": "text",
+        "id": "wordmark_text",
+        "label": "t:labels.wordmark_text",
+        "info": "t:info.wordmark_text",
+        "default": "RAYBELLE"
+      },
+      {
+        "type": "text",
+        "id": "wordmark_subtext",
+        "label": "t:labels.wordmark_subtext",
+        "info": "t:info.wordmark_subtext"
+      },
+      {
+        "type": "text",
+        "id": "type_wordmark_font",
+        "label": "t:labels.wordmark_font",
+        "info": "t:info.wordmark_font",
+        "default": "Bodoni Moda"
+      },
+      {
+        "type": "checkbox",
+        "id": "type_wordmark_optical_size",
+        "label": "t:labels.wordmark_optical_size",
+        "info": "t:info.wordmark_optical_size",
+        "default": true
+      },
+      {
+        "type": "range",
+        "id": "wordmark_width",
+        "min": 120,
+        "max": 400,
+        "step": 10,
+        "unit": "px",
+        "label": "t:labels.wordmark_width",
+        "default": 260
+      },
+      {
+        "type": "header",
+        "content": "t:general.wordmark_gold"
+      },
+      {
+        "type": "paragraph",
+        "content": "t:info.wordmark_gold"
+      },
+      {
+        "type": "checkbox",
+        "id": "wordmark_use_gold",
+        "label": "t:labels.wordmark_use_gold",
+        "info": "t:info.wordmark_use_gold",
+        "default": true
+      },
+      {
+        "type": "color",
+        "id": "wordmark_gold_1",
+        "default": "#A5775E",
+        "label": "t:labels.gold_shadow"
+      },
+      {
+        "type": "color",
+        "id": "wordmark_gold_2",
+        "default": "#B78368",
+        "label": "t:labels.gold_mid"
+      },
+      {
+        "type": "color",
+        "id": "wordmark_gold_3",
+        "default": "#E8CDBB",
+        "label": "t:labels.gold_highlight"
+      },
+      {
+        "type": "color",
+        "id": "wordmark_gold_4",
+        "default": "#946B55",
+        "label": "t:labels.gold_deep"
+      }
+    ]
+  },
+  {
+    "name": "t:general.typography",
+    "settings": [
+      {
+        "type": "header",
+        "content": "t:general.fonts"
+      },
+      {
+        "type": "font_picker",
+        "id": "type_primary_font",
+        "default": "work_sans_n4",
+        "label": "t:general.primary"
+      },
+      {
+        "type": "font_picker",
+        "id": "type_heading_font",
+        "default": "work_sans_n7",
+        "label": "t:labels.heading_font"
+      },
+      {
+        "type": "text",
+        "id": "type_display_font",
+        "label": "t:labels.display_font",
+        "info": "t:info.display_font",
+        "default": "Bodoni Moda"
+      },
+      {
+        "type": "range",
+        "id": "type_display_weight",
+        "min": 400,
+        "max": 700,
+        "step": 100,
+        "label": "t:labels.display_weight",
+        "default": 500
+      },
+      {
+        "type": "checkbox",
+        "id": "type_display_optical_size",
+        "label": "t:labels.display_optical_size",
+        "info": "t:info.display_optical_size",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "type_uppercase_display",
+        "label": "t:labels.uppercase_display",
+        "default": false
+      }
+    ]
+  },
+  {
+    "name": "t:general.layout",
+    "settings": [
+      {
+        "type": "select",
+        "id": "max_page_width",
+        "label": "t:labels.page_width",
+        "options": [
+          {
+            "value": "78rem",
+            "label": "t:options.page_width.narrow"
+          },
+          {
+            "value": "96rem",
+            "label": "t:options.page_width.wide"
+          }
+        ],
+        "default": "78rem"
+      },
+      {
+        "type": "range",
+        "id": "min_page_margin",
+        "min": 10,
+        "max": 80,
+        "step": 1,
+        "unit": "px",
+        "label": "t:labels.page_margin",
+        "default": 48
+      },
+      {
+        "type": "range",
+        "id": "section_rhythm",
+        "min": 32,
+        "max": 160,
+        "step": 8,
+        "unit": "px",
+        "label": "t:labels.section_rhythm",
+        "info": "t:info.section_rhythm",
+        "default": 112
+      }
+    ]
+  },
+  {
+    "name": "t:general.colors",
+    "settings": [
+      {
+        "type": "color",
+        "id": "background_color",
+        "default": "#1D1D1B",
+        "label": "t:labels.background"
+      },
+      {
+        "type": "color",
+        "id": "foreground_color",
+        "default": "#F2EBDD",
+        "label": "t:labels.foreground"
+      },
+      {
+        "type": "header",
+        "content": "t:general.brand_colors"
+      },
+      {
+        "type": "paragraph",
+        "content": "t:info.brand_colors"
+      },
+      {
+        "type": "color",
+        "id": "brand_1",
+        "default": "#B78368",
+        "label": "t:labels.brand_1"
+      },
+      {
+        "type": "color",
+        "id": "brand_2",
+        "default": "#795A45",
+        "label": "t:labels.brand_2"
+      },
+      {
+        "type": "color",
+        "id": "brand_3",
+        "default": "#F2EBDD",
+        "label": "t:labels.brand_3"
+      },
+      {
+        "type": "color",
+        "id": "surface_color",
+        "default": "#F2EBDD",
+        "label": "t:labels.surface"
+      },
+      {
+        "type": "color",
+        "id": "support_color",
+        "default": "#777A4B",
+        "label": "t:labels.support_color",
+        "info": "t:info.support_color"
+      },
+      {
+        "type": "header",
+        "content": "t:general.shape"
+      },
+      {
+        "type": "range",
+        "id": "input_corner_radius",
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "unit": "px",
+        "label": "t:labels.input_corner_radius",
+        "default": 0
+      },
+      {
+        "type": "range",
+        "id": "block_corner_radius",
+        "min": 0,
+        "max": 48,
+        "step": 2,
+        "unit": "px",
+        "label": "t:labels.block_corner_radius",
+        "info": "t:info.block_corner_radius",
+        "default": 0
+      },
+      {
+        "type": "range",
+        "id": "outline_width",
+        "min": 0,
+        "max": 6,
+        "step": 1,
+        "unit": "px",
+        "label": "t:labels.outline_width",
+        "info": "t:info.outline_width",
+        "default": 1
+      }
+    ]
+  }
+]

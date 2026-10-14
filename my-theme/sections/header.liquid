@@ -1,0 +1,215 @@
+<div class="site-header{% if section.settings.sticky %} site-header--sticky{% endif %}">
+  <h2 class="header__title">
+    <a class="header__wordmark-link" href="{{ routes.root_url }}">
+      {% if settings.wordmark_text != blank %}
+        {% render 'wordmark', uniq: 'header', gold: settings.wordmark_use_gold %}
+      {% else %}
+        {{ shop.name }}
+      {% endif %}
+    </a>
+  </h2>
+
+  <nav class="header__menu" aria-label="{{ 'general.main_nav' | t }}">
+    {% if section.settings.menu.links.size > 0 %}
+      {% for link in section.settings.menu.links %}
+        <a href="{{ link.url }}"{% if link.active %} aria-current="page"{% endif %}>{{ link.title }}</a>
+      {% endfor %}
+    {% else %}
+      {% comment %}
+        No menu assigned yet. This store sells a single product, so the fallback
+        points at the parts of the story rather than a catalogue. The anchors
+        are prefixed with the root URL so they still work from the product page
+        or the cart, not only from the homepage.
+
+        Assign a menu in the theme editor to replace this.
+      {% endcomment %}
+      <a href="{{ routes.root_url }}#how-it-works">{{ 'general.nav_how' | t }}</a>
+      <a href="{{ routes.root_url }}#reviews">{{ 'general.nav_reviews' | t }}</a>
+      <a href="{{ routes.root_url }}#faq">{{ 'general.nav_faq' | t }}</a>
+    {% endif %}
+  </nav>
+
+  <div class="header__icons">
+    {% liquid
+      assign header_product = section.settings.product | default: settings.featured_product
+  comment
+    Last resort: the store's first product. Without this, an unset "featured
+    product" means every buy control on the site renders nothing — the hero has
+    no Add to cart, the sticky bar does not appear, the closing CTA is empty,
+    and there is no route to the product page at all. Falling through to the
+    catalogue means the store sells something the moment it has something to
+    sell, and picking a featured product then overrides it.
+  endcomment
+  if header_product == blank
+    assign header_product = collections['all'].products.first
+  endif
+    %}
+    {% if header_product != blank and section.settings.show_shop_button %}
+      <a class="btn btn--primary header__shop" href="{{ header_product.url }}">
+        {{ section.settings.shop_label | default: 'Shop' }}
+      </a>
+    {% endif %}
+
+    <a href="{{ routes.cart_url }}">
+      {% if cart.item_count > 0 %}
+        <sup>{{ cart.item_count }}</sup>
+      {% endif %}
+
+      {{ 'icon-cart.svg' | inline_asset_content }}
+    </a>
+  </div>
+</div>
+
+{% stylesheet %}
+  /*
+   * Every rule is scoped to .site-header. A bare `header { ... }` selector here
+   * is global once Shopify concatenates the stylesheets, and it hit the
+   * <header> element that several content sections use for their heading block
+   * — forcing them all to 5rem tall and space-between.
+   */
+  /*
+   * Sticky lives on the SECTION WRAPPER, not on .site-header: a sticky element
+   * only travels within its own parent, and .site-header's parent is just the
+   * header block itself. `:has()` keeps the setting in control of it.
+   */
+  .site-header-section:has(.site-header--sticky) {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 50;
+    background-color: var(--color-background);
+    transition: box-shadow var(--dur-base) var(--ease-out);
+  }
+
+  /* `.is-scrolled` is set on <html> by snippets/motion.liquid. */
+  .is-scrolled .site-header-section:has(.site-header--sticky) {
+    box-shadow:
+      0 1px 0 var(--color-hairline),
+      0 8px 24px -18px rgb(0 0 0 / 0.8);
+  }
+
+  .site-header {
+    min-height: 5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    border-block-end: 1px solid var(--color-hairline);
+  }
+
+  /* Both ends must be allowed to shrink or the row pushes past the viewport. */
+  .site-header > * {
+    min-width: 0;
+  }
+  .site-header .header__title {
+    margin: 0;
+    /* Sized by the wordmark; the value only shows on the shop-name fallback. */
+    font-size: var(--text-lg);
+  }
+  /* The link only constrains width when it wraps the SVG mark. */
+  .site-header .header__wordmark-link:has(.wordmark) {
+    display: block;
+    flex: none;
+    width: var(--wordmark-width, 260px);
+    max-width: 52vw;
+  }
+  .site-header a {
+    position: relative;
+    text-decoration: none;
+    color: currentcolor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .site-header .header__menu a {
+    font-size: var(--text-sm);
+    opacity: 0.75;
+  }
+  .site-header .header__menu a:hover {
+    opacity: 1;
+  }
+  .site-header a sup {
+    position: absolute;
+    left: 100%;
+    overflow: hidden;
+    max-width: var(--page-margin);
+  }
+  .site-header .header__shop {
+    flex: none;
+    min-height: 40px;
+    padding-inline: var(--space-6);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+
+  .site-header .header__icons svg {
+    width: 1.375rem;
+    height: 1.375rem;
+  }
+  .site-header .header__menu,
+  .site-header .header__icons {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+  }
+  @media (max-width: 749px) {
+    .site-header .header__menu {
+      display: none;
+    }
+
+    /* Tighten so the wordmark, Shop and cart fit a narrow phone. */
+    .site-header .header__icons {
+      gap: var(--space-3);
+    }
+
+    .site-header .header__shop {
+      padding-inline: var(--space-4);
+    }
+
+    /* The mark gets the space the hidden menu left, but not the button's. */
+    .site-header .header__wordmark-link:has(.wordmark) {
+      max-width: 44vw;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.header",
+  "tag": "header",
+  "class": "site-header-section",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "sticky",
+      "label": "t:labels.sticky_header",
+      "info": "t:info.sticky_header",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_shop_button",
+      "label": "t:labels.show_shop_button",
+      "info": "t:info.show_shop_button",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "shop_label",
+      "label": "t:labels.shop_label",
+      "default": "Shop"
+    },
+    {
+      "type": "product",
+      "id": "product",
+      "label": "t:labels.product",
+      "info": "t:info.product_fallback"
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "t:labels.menu"
+    }
+
+  ]
+}
+{% endschema %}

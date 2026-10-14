@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 220" width="100%" height="100%">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c5a059" />
+      <stop offset="30%" stop-color="#dfbc7a" />
+      <stop offset="50%" stop-color="#f3e5ab" />
+      <stop offset="70%" stop-color="#dfbc7a" />
+      <stop offset="100%" stop-color="#b38f45" />
+    </linearGradient>
+
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&amp;display=swap');
+      
+      .main-text {
+        font-family: 'Bodoni Moda', 'Didot', 'Bodoni MT', serif;
+        font-weight: 600;
+        fill: url(#gold);
+        font-size: 105px;
+        letter-spacing: 0.18em;
+        text-anchor: middle;
+      }
+
+      .sub-text {
+        font-family: 'Bodoni Moda', 'Didot', 'Bodoni MT', serif;
+        font-weight: 400;
+        fill: url(#gold);
+        font-size: 24px;
+        letter-spacing: 0.55em;
+        text-anchor: middle;
+      }
+    </style>
+  </defs>
+
+  <g transform="translate(560, 0)">
+    <text x="0" y="115" class="main-text">RAYBELLE</text>
+    <text x="0" y="180" class="sub-text">BODONI</text>
+  </g>
+</svg>

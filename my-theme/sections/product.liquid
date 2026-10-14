@@ -1,0 +1,653 @@
+{% comment %}
+  Product page.
+
+  Built like the homepage hero so a visitor arriving straight on /products/x
+  gets the same treatment: media bleeding to the viewport edge, copy on the
+  container inset, buy controls above the fold.
+
+  The variant picker is radio inputs named `id` rather than a <select>, so the
+  choice posts natively with no JavaScript and each option can show its own
+  price and availability.
+
+  https://shopify.dev/docs/storefronts/themes/architecture/templates/product
+{% endcomment %}
+
+{% liquid
+  assign current = product.selected_or_first_available_variant
+  assign form_id = 'pdp-buy-' | append: section.id
+  assign has_variants = false
+  if product.variants.size > 1
+    assign has_variants = true
+  endif
+%}
+
+<div class="pdp band band--page full-width">
+  <div class="pdp__grid">
+    {% comment %}
+      Gallery radios sit here, beside both columns, so `:checked ~` can reach
+      the media. Same reason as the hero.
+    {% endcomment %}
+    {% if product.images.size > 1 %}
+      {% for image in product.images limit: 8 %}
+        <input
+          type="radio"
+          class="visually-hidden pdp__shot-radio"
+          name="pdp-shot-{{ section.id }}"
+          id="pdp-shot-{{ section.id }}-{{ forloop.index }}"
+          {% if forloop.first %}
+            checked
+          {% endif %}
+        >
+      {% endfor %}
+    {% endif %}
+
+    <div class="pdp__media">
+      <div class="pdp__stage">
+        {% if product.images.size > 0 %}
+          {% for image in product.images limit: 8 %}
+            {{
+              image
+              | image_url: width: 1400
+              | image_tag: class: 'pdp__img', widths: '480,720,1000,1400', sizes: '(min-width: 900px) 50vw, 100vw', loading: 'eager', alt: image.alt | default: product.title
+            }}
+          {% endfor %}
+        {% else %}
+          {{ 'product-1' | placeholder_svg_tag: 'pdp__img' }}
+        {% endif %}
+      </div>
+
+      {% if product.images.size > 1 %}
+        <ul class="pdp__thumbs">
+          {% for image in product.images limit: 8 %}
+            <li>
+              <label class="pdp__thumb" for="pdp-shot-{{ section.id }}-{{ forloop.index }}">
+                {{
+                  image
+                  | image_url: width: 200
+                  | image_tag: class: 'pdp__thumb-img', widths: '100,200', sizes: '72px', loading: 'lazy', alt: ''
+                }}
+                <span class="visually-hidden">
+                  {{ 'product.view_image' | t: index: forloop.index }}
+                </span>
+              </label>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+
+    <div class="pdp__copy">
+      {% if product.vendor != blank and section.settings.show_vendor %}
+        <p class="eyebrow">{{ product.vendor }}</p>
+      {% endif %}
+
+      <h1 class="display pdp__title">{{ product.title }}</h1>
+      <span class="pdp__rule" aria-hidden="true"></span>
+
+      <p class="pdp__price">
+        <span class="pdp__price-now">{{ current.price | money }}</span>
+        {% if current.compare_at_price > current.price %}
+          {%- assign saved = current.compare_at_price | minus: current.price | money -%}
+          <s class="pdp__price-was">{{ current.compare_at_price | money }}</s>
+          <span class="pdp__save">{{ 'product.save_amount' | t: amount: saved }}</span>
+        {% endif %}
+      </p>
+
+      {% if product.description != blank %}
+        <div class="pdp__desc rte">{{ product.description }}</div>
+      {% endif %}
+
+      {% form 'product', product, id: form_id, class: 'pdp__form' %}
+        {% if has_variants %}
+          <fieldset class="pdp__variants">
+            <legend class="pdp__variants-legend">{{ 'product.choose_option' | t }}</legend>
+            {% for variant in product.variants %}
+              <div class="pdp__variant">
+                <input
+                  type="radio"
+                  class="visually-hidden pdp__variant-radio"
+                  name="id"
+                  id="pdp-v-{{ section.id }}-{{ forloop.index }}"
+                  value="{{ variant.id }}"
+                  {% if variant.available == false %}
+                    disabled
+                  {% endif %}
+                  {% if variant == current %}
+                    checked
+                  {% endif %}
+                >
+                <label class="pdp__variant-label" for="pdp-v-{{ section.id }}-{{ forloop.index }}">
+                  <span>{{ variant.title }}</span>
+                  <span class="pdp__variant-price">
+                    {% if variant.available %}
+                      {{ variant.price | money }}
+                    {% else %}
+                      {{ 'product.sold_out' | t }}
+                    {% endif %}
+                  </span>
+                </label>
+              </div>
+            {% endfor %}
+          </fieldset>
+        {% else %}
+          <input type="hidden" name="id" value="{{ current.id }}">
+        {% endif %}
+
+        <div class="pdp__actions">
+          {% if section.settings.show_quantity %}
+            {% render 'quantity-input', name: 'quantity', value: 1, label: product.title %}
+          {% endif %}
+
+          <button
+            class="btn btn--primary pdp__cta"
+            type="submit"
+            name="add"
+            {% unless product.available %}
+              disabled
+            {% endunless %}
+          >
+            {% if product.available %}
+              {{ section.settings.cta_label | default: 'Add to cart' }}
+            {% else %}
+              {{ 'product.sold_out' | t }}
+            {% endif %}
+          </button>
+        </div>
+
+        {% if section.settings.show_buy_now and product.available %}
+          <div class="pdp__buy-now">{{ form | payment_button }}</div>
+        {% endif %}
+      {% endform %}
+
+      {% if section.blocks.size > 0 %}
+        <ul class="pdp__trust">
+          {% for block in section.blocks %}
+            {% case block.type %}
+              {% when 'assurance' %}
+                <li class="pdp__trust-item" {{ block.shopify_attributes }}>
+                  {% render 'icon', name: block.settings.icon, size: 15 %}
+                  <span>{{ block.settings.text }}</span>
+                </li>
+            {% endcase %}
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% comment %} Specs and policies, collapsed so they do not push the buy button down. {% endcomment %}
+      {% assign detail_blocks = section.blocks | where: 'type', 'detail' %}
+      {% if detail_blocks.size > 0 %}
+        <div class="pdp__details">
+          {% for block in detail_blocks %}
+            <details class="pdp__detail" {{ block.shopify_attributes }}>
+              <summary class="pdp__detail-summary">
+                <span>{{ block.settings.heading }}</span>
+                <span class="pdp__marker" aria-hidden="true"></span>
+              </summary>
+              <div class="pdp__detail-body rte">{{ block.settings.content }}</div>
+            </details>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .pdp__grid {
+    display: grid;
+  }
+
+  /* Same reason as the hero: `min-width: auto` would widen the column. */
+  .pdp__grid > * {
+    min-width: 0;
+  }
+
+  .pdp__copy {
+    display: flex;
+    flex-direction: column;
+    padding-block: calc(var(--section-rhythm) * 0.6);
+    padding-inline-end: max(
+      var(--page-margin),
+      calc((100vw - var(--page-width)) / 2 + var(--page-margin))
+    );
+    padding-inline-start: var(--page-margin);
+  }
+
+  .pdp__title {
+    font-size: var(--text-3xl);
+    max-width: 16ch;
+    margin-block-end: var(--space-4);
+  }
+
+  .pdp__rule {
+    display: block;
+    width: 56px;
+    height: 1px;
+    background-color: var(--color-accent, var(--color-brand-1));
+    margin-block-end: var(--space-4);
+  }
+
+  .pdp__price {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-end: var(--space-6);
+  }
+
+  .pdp__price-now {
+    font-family: var(--font-display--family);
+    font-variation-settings: var(--display-variation);
+    font-size: var(--text-2xl);
+    color: var(--color-accent, var(--color-brand-1));
+  }
+
+  .pdp__price-was {
+    opacity: 0.45;
+  }
+
+  .pdp__save {
+    padding: var(--space-1) var(--space-3);
+    background-color: var(--color-brand-1);
+    color: var(--color-on-brand-1);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .pdp__desc {
+    color: var(--color-muted);
+    max-width: 48ch;
+    margin-block-end: var(--space-8);
+  }
+
+  /* Media */
+  .pdp__media {
+    background-color: var(--color-brand-3);
+    padding: var(--space-6);
+    display: grid;
+    gap: var(--space-4);
+    align-content: center;
+  }
+
+  .pdp__stage {
+    display: grid;
+    aspect-ratio: 3 / 4;
+    max-height: 70vh;
+  }
+
+  .pdp__img {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease-out);
+  }
+
+  /* One image and no radios: nothing drives opacity, so show it. */
+  .pdp__stage > .pdp__img:only-of-type {
+    opacity: 1;
+  }
+
+  .pdp__shot-radio:nth-of-type(1):checked ~ .pdp__media .pdp__img:nth-of-type(1),
+  .pdp__shot-radio:nth-of-type(2):checked ~ .pdp__media .pdp__img:nth-of-type(2),
+  .pdp__shot-radio:nth-of-type(3):checked ~ .pdp__media .pdp__img:nth-of-type(3),
+  .pdp__shot-radio:nth-of-type(4):checked ~ .pdp__media .pdp__img:nth-of-type(4),
+  .pdp__shot-radio:nth-of-type(5):checked ~ .pdp__media .pdp__img:nth-of-type(5),
+  .pdp__shot-radio:nth-of-type(6):checked ~ .pdp__media .pdp__img:nth-of-type(6),
+  .pdp__shot-radio:nth-of-type(7):checked ~ .pdp__media .pdp__img:nth-of-type(7),
+  .pdp__shot-radio:nth-of-type(8):checked ~ .pdp__media .pdp__img:nth-of-type(8) {
+    opacity: 1;
+  }
+
+  .pdp__thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pdp__thumb {
+    display: block;
+    width: 72px;
+    aspect-ratio: 1;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color var(--dur-fast) var(--ease-out);
+  }
+
+  .pdp__thumb:hover {
+    border-color: var(--color-on-brand-3);
+  }
+
+  .pdp__thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+  }
+
+  .pdp__shot-radio:nth-of-type(1):checked ~ .pdp__media .pdp__thumbs li:nth-child(1) .pdp__thumb,
+  .pdp__shot-radio:nth-of-type(2):checked ~ .pdp__media .pdp__thumbs li:nth-child(2) .pdp__thumb,
+  .pdp__shot-radio:nth-of-type(3):checked ~ .pdp__media .pdp__thumbs li:nth-child(3) .pdp__thumb,
+  .pdp__shot-radio:nth-of-type(4):checked ~ .pdp__media .pdp__thumbs li:nth-child(4) .pdp__thumb,
+  .pdp__shot-radio:nth-of-type(5):checked ~ .pdp__media .pdp__thumbs li:nth-child(5) .pdp__thumb,
+  .pdp__shot-radio:nth-of-type(6):checked ~ .pdp__media .pdp__thumbs li:nth-child(6) .pdp__thumb,
+  .pdp__shot-radio:nth-of-type(7):checked ~ .pdp__media .pdp__thumbs li:nth-child(7) .pdp__thumb,
+  .pdp__shot-radio:nth-of-type(8):checked ~ .pdp__media .pdp__thumbs li:nth-child(8) .pdp__thumb {
+    border-color: var(--color-on-brand-3);
+  }
+
+  .pdp__shot-radio:focus-visible ~ .pdp__media .pdp__thumbs .pdp__thumb {
+    outline: 2px solid var(--color-brand-1);
+    outline-offset: 2px;
+  }
+
+  /* Variants */
+  .pdp__variants {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-6);
+    padding: 0;
+    border: 0;
+  }
+
+  .pdp__variants-legend {
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-block-end: var(--space-2);
+    padding: 0;
+  }
+
+  .pdp__variant-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 52px;
+    padding-inline: var(--space-4);
+    border: 1px solid var(--color-hairline);
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease-out);
+  }
+
+  .pdp__variant-label:hover {
+    border-color: currentcolor;
+  }
+
+  .pdp__variant-radio:checked + .pdp__variant-label {
+    border-color: var(--color-accent, var(--color-brand-1));
+  }
+
+  .pdp__variant-radio:disabled + .pdp__variant-label {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .pdp__variant-radio:focus-visible + .pdp__variant-label {
+    outline: 2px solid var(--color-brand-1);
+    outline-offset: 2px;
+  }
+
+  .pdp__variant-price {
+    font-family: var(--font-display--family);
+    font-variation-settings: var(--display-variation);
+  }
+
+  /* Actions */
+  .pdp__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .pdp__cta {
+    flex: 1 1 220px;
+  }
+
+  .pdp__cta[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .pdp__buy-now {
+    margin-block-start: var(--space-3);
+  }
+
+  .pdp__buy-now .shopify-payment-button__button {
+    min-height: 56px;
+  }
+
+  /* Shopify's "More payment options" link ships as default browser blue. */
+  .pdp__buy-now .shopify-payment-button__more-options {
+    margin-block-start: var(--space-2);
+    min-height: 44px;
+    color: var(--color-accent, currentcolor);
+    font-size: var(--text-sm);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentcolor 40%, transparent);
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color var(--dur-fast) var(--ease-out);
+  }
+
+  .pdp__buy-now .shopify-payment-button__more-options:hover {
+    text-decoration-color: currentcolor;
+  }
+
+  .pdp__buy-now .shopify-payment-button__more-options:focus-visible {
+    outline: var(--outline-width, 2px) solid currentcolor;
+    outline-offset: 2px;
+  }
+
+  .pdp__trust {
+    display: grid;
+    gap: var(--space-2);
+    margin-block: var(--space-8) 0;
+    padding-block-start: var(--space-6);
+    padding-inline: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    border-block-start: 1px solid var(--color-hairline);
+  }
+
+  .pdp__trust-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .pdp__trust-item svg {
+    color: var(--color-accent, var(--color-brand-1));
+  }
+
+  /* Details */
+  .pdp__details {
+    margin-block-start: var(--space-8);
+  }
+
+  .pdp__detail {
+    border-block-start: 1px solid var(--color-hairline);
+    padding-block: var(--space-4);
+  }
+
+  .pdp__detail:last-child {
+    border-block-end: 1px solid var(--color-hairline);
+  }
+
+  .pdp__detail-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 44px;
+    font-size: var(--text-base);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .pdp__detail-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .pdp__marker {
+    position: relative;
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--color-accent, var(--color-brand-1));
+  }
+
+  .pdp__marker::before,
+  .pdp__marker::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    width: 100%;
+    height: 1px;
+    background-color: currentcolor;
+    transition: transform var(--dur-base) var(--ease-out);
+  }
+
+  .pdp__marker::after {
+    transform: rotate(90deg);
+  }
+
+  .pdp__detail[open] .pdp__marker::after {
+    transform: rotate(0deg);
+  }
+
+  .pdp__detail-body {
+    padding-block-start: var(--space-3);
+    color: var(--color-muted);
+    max-width: 62ch;
+  }
+
+  .rte a {
+    color: var(--color-accent, var(--color-brand-1));
+  }
+
+  .rte ul,
+  .rte ol {
+    padding-inline-start: 1.25em;
+  }
+
+  @media (min-width: 900px) {
+    .pdp__grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: stretch;
+    }
+
+    .pdp__copy {
+      justify-content: center;
+      padding-inline-start: clamp(32px, 4vw, 72px);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.product",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_vendor",
+      "label": "t:labels.show_vendor",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "show_quantity",
+      "label": "t:labels.show_quantity",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "t:labels.cta_label",
+      "default": "Add to cart"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_buy_now",
+      "label": "t:labels.show_buy_now",
+      "info": "t:info.show_buy_now",
+      "default": true
+    }
+  ],
+  "blocks": [
+    {
+      "type": "assurance",
+      "name": "t:general.bullet",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "t:labels.icon",
+          "default": "check",
+          "options": [
+            { "value": "bolt", "label": "t:options.icon.bolt" },
+            { "value": "battery", "label": "t:options.icon.battery" },
+            { "value": "clock", "label": "t:options.icon.clock" },
+            { "value": "leaf", "label": "t:options.icon.leaf" },
+            { "value": "droplet", "label": "t:options.icon.droplet" },
+            { "value": "cup", "label": "t:options.icon.cup" },
+            { "value": "sparkle", "label": "t:options.icon.sparkle" },
+            { "value": "check", "label": "t:options.icon.check" },
+            { "value": "shield", "label": "t:options.icon.shield" },
+            { "value": "globe", "label": "t:options.icon.globe" }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "t:labels.text",
+          "default": "Free shipping over 50"
+        }
+      ]
+    },
+    {
+      "type": "detail",
+      "name": "t:general.detail",
+      "settings": [
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:labels.heading",
+          "default": "Specifications"
+        },
+        {
+          "type": "richtext",
+          "id": "content",
+          "label": "t:labels.content",
+          "default": "<p>Add specifications, shipping information or care instructions.</p>"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.product",
+      "blocks": [
+        { "type": "assurance", "settings": { "icon": "check", "text": "Free shipping over 50" } },
+        { "type": "assurance", "settings": { "icon": "check", "text": "30-day returns" } },
+        { "type": "assurance", "settings": { "icon": "shield", "text": "Two-year warranty" } },
+        { "type": "detail", "settings": { "heading": "Specifications" } },
+        { "type": "detail", "settings": { "heading": "Shipping and returns" } }
+      ]
+    }
+  ],
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  }
+}
+{% endschema %}

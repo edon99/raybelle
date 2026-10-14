@@ -1,0 +1,420 @@
+{% comment %}
+  Review rail.
+
+  A scroll-snap row rather than a JavaScript carousel: it is swipeable on
+  touch, scrollable with the trackpad, and reachable by keyboard because the
+  rail itself is a focusable labelled region. No hidden slides, so every review
+  is in the DOM for search engines and screen readers.
+
+  The arrows are an addition to that, not a replacement for it — they scroll the
+  same element. The scrollbar is hidden rather than the scrolling disabled, so
+  swipe, trackpad and arrow keys all still work. The buttons are created by
+  script and only when the row actually overflows, so they never appear as dead
+  controls.
+{% endcomment %}
+
+<div id="reviews" class="quotes band {{ section.settings.band }} band-pad full-width">
+  <div class="quotes__inner">
+    <header class="quotes__head reveal">
+      {% if section.settings.kicker != blank %}
+        <p class="eyebrow">{{ section.settings.kicker }}</p>
+      {% endif %}
+      <h2 class="display section-title quotes__title">{{ section.settings.heading }}</h2>
+      {% if section.settings.summary != blank %}
+        <p class="quotes__summary">{{ section.settings.summary }}</p>
+      {% endif %}
+
+      {% comment %}
+        Hidden until the script confirms the row overflows. Rendered in markup
+        rather than injected so the labels stay translatable.
+      {% endcomment %}
+      <div class="quotes__nav" data-rail-nav hidden>
+        <button class="quotes__arrow" type="button" data-rail-prev>
+          {% render 'icon', name: 'arrow-right', size: 18, class: 'quotes__arrow-icon quotes__arrow-icon--back' %}
+          <span class="visually-hidden">{{ 'product.previous' | t }}</span>
+        </button>
+        <button class="quotes__arrow" type="button" data-rail-next>
+          {% render 'icon', name: 'arrow-right', size: 18, class: 'quotes__arrow-icon' %}
+          <span class="visually-hidden">{{ 'product.next' | t }}</span>
+        </button>
+      </div>
+    </header>
+  </div>
+
+  <ul
+    class="quotes__rail"
+    tabindex="0"
+    role="region"
+    aria-label="{{ section.settings.heading | escape }}"
+  >
+    {% for block in section.blocks %}
+      <li class="quotes__card" {{ block.shopify_attributes }}>
+        {% if block.settings.rating > 0 %}
+          <span
+            class="quotes__stars"
+            role="img"
+            aria-label="{{ 'product.rating_out_of_five' | t: rating: block.settings.rating }}"
+          >
+            {% for i in (1..block.settings.rating) %}
+              {% render 'icon', name: 'star', size: 13 %}
+            {% endfor %}
+          </span>
+        {% endif %}
+
+        <blockquote class="quotes__quote">{{ block.settings.quote }}</blockquote>
+
+        <figcaption class="quotes__by">
+          {% if block.settings.avatar != blank %}
+            {{
+              block.settings.avatar
+              | image_url: width: 96
+              | image_tag: class: 'quotes__avatar', widths: '48,96', sizes: '48px', loading: 'lazy'
+            }}
+          {% endif %}
+          <span>
+            <strong class="quotes__name">{{ block.settings.name }}</strong>
+            {% if block.settings.detail != blank %}
+              <span class="quotes__detail">{{ block.settings.detail }}</span>
+            {% endif %}
+          </span>
+        </figcaption>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% stylesheet %}
+  .quotes__inner {
+    display: grid;
+    grid-template-columns: var(--content-grid);
+  }
+
+  .quotes__head {
+    grid-column: 2;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: var(--space-4);
+    margin-block-end: var(--space-12);
+  }
+
+  .quotes__head > .eyebrow,
+  .quotes__title,
+  .quotes__summary {
+    grid-column: 1;
+  }
+
+  .quotes__nav {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    display: flex;
+    align-self: end;
+    gap: var(--space-2);
+  }
+
+  .quotes__nav[hidden] {
+    display: none;
+  }
+
+  .quotes__arrow {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    background: none;
+    color: currentcolor;
+    border: 1px solid var(--color-hairline);
+    cursor: pointer;
+    transition:
+      border-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out),
+      opacity var(--dur-fast) var(--ease-out);
+  }
+
+  .quotes__arrow:hover:not([disabled]) {
+    border-color: currentcolor;
+    color: var(--color-accent, var(--color-brand-1));
+  }
+
+  /* Dimmed rather than removed, so the row does not reflow at either end. */
+  .quotes__arrow[disabled] {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .quotes__arrow-icon--back {
+    transform: scaleX(-1);
+  }
+
+  @media (max-width: 599px) {
+    .quotes__head {
+      grid-template-columns: 1fr;
+    }
+
+    .quotes__nav {
+      grid-column: 1;
+      grid-row: auto;
+      margin-block-start: var(--space-2);
+    }
+  }
+
+  .quotes__title {
+    margin-block-start: var(--space-3);
+  }
+
+  .quotes__summary {
+    margin-block-start: var(--space-4);
+    font-size: var(--text-lg);
+  }
+
+  .quotes__rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: min(400px, 84vw);
+    gap: var(--space-6);
+    margin: 0;
+    padding-inline: max(var(--page-margin), calc((100vw - var(--page-width)) / 2 + var(--page-margin)));
+    padding-block: var(--space-2);
+    /*
+     * Snap points are measured from the scrollport, which ignores padding — so
+     * the row loaded already scrolled past its own inset and "previous" looked
+     * enabled at the start. Matching the scroll padding makes scrollLeft 0 a
+     * valid snap position.
+     */
+    scroll-padding-inline: max(
+      var(--page-margin),
+      calc((100vw - var(--page-width)) / 2 + var(--page-margin))
+    );
+    list-style: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    overscroll-behavior-inline: contain;
+    /* Hidden, not disabled: swipe, trackpad and arrow keys all still work. */
+    scrollbar-width: none;
+  }
+
+  .quotes__rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .quotes__rail {
+      scroll-behavior: auto;
+    }
+  }
+
+  .quotes__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    scroll-snap-align: start;
+    padding: var(--space-8);
+    gap: var(--space-6);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-block);
+    background-color: var(--band-bg);
+  }
+
+  .quotes__stars {
+    display: inline-flex;
+    gap: 2px;
+  }
+
+  .quotes__quote {
+    margin: 0;
+    font-family: var(--font-display--family);
+    font-size: var(--text-xl);
+    line-height: 1.4;
+    flex: 1 1 auto;
+  }
+
+  .quotes__by {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+  }
+
+  .quotes__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-pill);
+    object-fit: cover;
+  }
+
+  .quotes__name {
+    display: block;
+  }
+
+  .quotes__detail {
+    opacity: 0.75;
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  // Arrows drive the same scroll container the user can already swipe. They
+  // are revealed only when the row overflows, and disabled at each end.
+  (function () {
+    document.querySelectorAll('.quotes').forEach((section) => {
+      const rail = section.querySelector('.quotes__rail');
+      const nav = section.querySelector('[data-rail-nav]');
+      if (!rail || !nav) return;
+
+      const prev = nav.querySelector('[data-rail-prev]');
+      const next = nav.querySelector('[data-rail-next]');
+
+      // One card plus the gap, so a press advances exactly one review.
+      const step = () => {
+        const card = rail.querySelector('.quotes__card');
+        if (!card) return rail.clientWidth;
+        const gap = parseFloat(getComputedStyle(rail).columnGap) || 0;
+        return card.getBoundingClientRect().width + gap;
+      };
+
+      const overflows = () => rail.scrollWidth > rail.clientWidth + 4;
+
+      const sync = () => {
+        if (!overflows()) {
+          nav.hidden = true;
+          return;
+        }
+        nav.hidden = false;
+        // 2px of slack: sub-pixel widths never quite reach the exact end.
+        prev.disabled = rail.scrollLeft <= 2;
+        next.disabled = rail.scrollLeft >= rail.scrollWidth - rail.clientWidth - 2;
+      };
+
+      const go = (dir) => rail.scrollBy({ left: dir * step(), behavior: 'smooth' });
+
+      prev.addEventListener('click', () => go(-1));
+      next.addEventListener('click', () => go(1));
+      rail.addEventListener('scroll', sync, { passive: true });
+      window.addEventListener('resize', sync);
+
+      if ('ResizeObserver' in window) new ResizeObserver(sync).observe(rail);
+      sync();
+    });
+  })();
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:general.testimonials",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "band",
+      "label": "t:labels.band",
+      "default": "band--page",
+      "options": [
+        { "value": "band--page", "label": "t:options.band.page" },
+        { "value": "band--surface", "label": "t:options.band.surface" },
+        { "value": "band--brand-1", "label": "t:options.band.brand_1" },
+        { "value": "band--brand-2", "label": "t:options.band.brand_2" },
+        { "value": "band--brand-3", "label": "t:options.band.brand_3" },
+        { "value": "band--ink", "label": "t:options.band.ink" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "kicker",
+      "label": "t:labels.kicker",
+      "default": "Reviews"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:labels.heading",
+      "default": "What people say after a month"
+    },
+    {
+      "type": "text",
+      "id": "summary",
+      "label": "t:labels.summary",
+      "default": "4.8 average from 2,400+ verified buyers."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "quote",
+      "name": "t:general.quote",
+      "settings": [
+        {
+          "type": "range",
+          "id": "rating",
+          "min": 0,
+          "max": 5,
+          "step": 1,
+          "label": "t:labels.rating",
+          "default": 5
+        },
+        {
+          "type": "textarea",
+          "id": "quote",
+          "label": "t:labels.quote",
+          "default": "Genuinely did not expect crema out of something this small."
+        },
+        {
+          "type": "text",
+          "id": "name",
+          "label": "t:labels.name",
+          "default": "Customer name"
+        },
+        {
+          "type": "text",
+          "id": "detail",
+          "label": "t:labels.detail",
+          "info": "t:info.detail"
+        },
+        {
+          "type": "image_picker",
+          "id": "avatar",
+          "label": "t:labels.avatar"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.testimonials",
+      "blocks": [
+        {
+          "type": "quote",
+          "settings": {
+            "quote": "Genuinely did not expect crema out of something this small.",
+            "name": "Marta K.",
+            "detail": "Verified buyer"
+          }
+        },
+        {
+          "type": "quote",
+          "settings": {
+            "quote": "Lives in my van. Two years of site coffee solved.",
+            "name": "Devon R.",
+            "detail": "Verified buyer"
+          }
+        },
+        {
+          "type": "quote",
+          "settings": {
+            "quote": "The rinse thing is not marketing, it really is ten seconds.",
+            "name": "Priya S.",
+            "detail": "Verified buyer"
+          }
+        },
+        {
+          "type": "quote",
+          "settings": {
+            "quote": "Took it up a mountain. Better than the cafe at the bottom.",
+            "name": "Tomas L.",
+            "detail": "Verified buyer"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

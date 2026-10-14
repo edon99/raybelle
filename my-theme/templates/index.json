@@ -1,0 +1,423 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "hero": {
+      "type": "hero-product",
+      "blocks": {
+        "b1": {
+          "type": "bullet",
+          "settings": {
+            "icon": "check",
+            "text": "Free shipping over 50"
+          }
+        },
+        "b2": {
+          "type": "bullet",
+          "settings": {
+            "icon": "check",
+            "text": "30-day returns"
+          }
+        },
+        "b3": {
+          "type": "bullet",
+          "settings": {
+            "icon": "check",
+            "text": "Two-year warranty"
+          }
+        }
+      },
+      "block_order": [
+        "b1",
+        "b2",
+        "b3"
+      ],
+      "settings": {
+        "band": "band--page",
+        "kicker": "Portable espresso",
+        "heading": "Real espresso, anywhere you stop",
+        "body": "<p>Eighteen bars of pressure in something that fits a bottle pocket. No outlet, no queue, no compromise on the shot.</p>",
+        "demo_asset": "product-machine.jpg",
+        "availability": "In stock",
+        "show_price": false,
+        "show_swatches": true,
+        "cta_label": "Buy now",
+        "link_label": "How it works",
+        "link_url": "#how-it-works",
+        "rating_text": "4.8 from 2,400+ reviews",
+        "rating_label": "Rated 4.8 out of 5",
+        "buy_url": "/products/home-decor-example-product-1"
+      }
+    },
+    "ticker": {
+      "type": "marquee",
+      "blocks": {
+        "m1": {
+          "type": "phrase",
+          "settings": {
+            "text": "Ground coffee or capsules"
+          }
+        },
+        "m2": {
+          "type": "phrase",
+          "settings": {
+            "text": "Cabin-bag safe"
+          }
+        },
+        "m3": {
+          "type": "phrase",
+          "settings": {
+            "text": "USB-C rechargeable"
+          }
+        },
+        "m4": {
+          "type": "phrase",
+          "settings": {
+            "text": "Replaceable battery"
+          }
+        },
+        "m5": {
+          "type": "phrase",
+          "settings": {
+            "text": "Eighteen bar pressure"
+          }
+        }
+      },
+      "block_order": [
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m5"
+      ],
+      "settings": {
+        "band": "band--page",
+        "speed": 65,
+        "separator": "sparkle"
+      }
+    },
+    "specs": {
+      "type": "stats",
+      "blocks": {
+        "t1": {
+          "type": "stat",
+          "settings": {
+            "value": "18",
+            "unit": "bar",
+            "label": "Pump pressure"
+          }
+        },
+        "t2": {
+          "type": "stat",
+          "settings": {
+            "value": "20",
+            "unit": "shots",
+            "label": "Per charge"
+          }
+        },
+        "t3": {
+          "type": "stat",
+          "settings": {
+            "value": "690",
+            "unit": "g",
+            "label": "Carry weight"
+          }
+        },
+        "t4": {
+          "type": "stat",
+          "settings": {
+            "value": "90",
+            "unit": "sec",
+            "label": "Heat to pour"
+          }
+        }
+      },
+      "block_order": [
+        "t1",
+        "t2",
+        "t3",
+        "t4"
+      ],
+      "settings": {
+        "band": "band--brand-2",
+        "kicker": "The numbers"
+      }
+    },
+    "gallery": {
+      "type": "product-gallery",
+      "blocks": {
+        "g1": {
+          "type": "shot",
+          "settings": {
+            "demo_asset": "product-machine.jpg",
+            "caption": "The machine — 690 g, 21 cm tall"
+          }
+        },
+        "g2": {
+          "type": "shot",
+          "settings": {
+            "demo_asset": "product-kit.jpg",
+            "caption": "Adapter, basket, lid and cup"
+          }
+        },
+        "g3": {
+          "type": "shot",
+          "settings": {
+            "demo_asset": "demo-crema.jpg",
+            "caption": "Eighteen bar, with crema"
+          }
+        }
+      },
+      "block_order": [
+        "g1",
+        "g2",
+        "g3"
+      ],
+      "settings": {
+        "band": "band--page",
+        "kicker": "A closer look",
+        "heading": "Everything that comes in the box"
+      }
+    },
+    "features": {
+      "type": "feature-grid",
+      "blocks": {
+        "f1": {
+          "type": "feature",
+          "settings": {
+            "heading": "Eighteen bar pressure",
+            "text": "Enough to pull a genuine crema, not a long black in disguise."
+          }
+        },
+        "f2": {
+          "type": "feature",
+          "settings": {
+            "heading": "Charges over USB-C",
+            "text": "Around twenty shots between charges, from the cable already in your bag."
+          }
+        },
+        "f3": {
+          "type": "feature",
+          "settings": {
+            "heading": "Grounds or capsules",
+            "text": "Eight grams in the basket, or a capsule in the adapter. Both are in the box."
+          }
+        },
+        "f4": {
+          "type": "feature",
+          "settings": {
+            "heading": "Cleans in ten seconds",
+            "text": "Water, one pulse, tip it out. No brushes and no disassembly."
+          }
+        }
+      },
+      "block_order": [
+        "f1",
+        "f2",
+        "f3",
+        "f4"
+      ],
+      "settings": {
+        "band": "band--surface",
+        "kicker": "Why it works",
+        "heading": "A small machine that makes no excuses"
+      }
+    },
+    "statement": {
+      "type": "statement",
+      "settings": {
+        "text": "Ninety seconds from cold water to crema.",
+        "demo_asset": "demo-espresso-dark.jpg",
+        "ratio": "16 / 7",
+        "overlay_opacity": 70
+      }
+    },
+    "how_it_works": {
+      "type": "steps",
+      "blocks": {
+        "s1": {
+          "type": "step",
+          "settings": {
+            "heading": "Fill",
+            "text": "Water in the base, coffee or a capsule in the basket."
+          }
+        },
+        "s2": {
+          "type": "step",
+          "settings": {
+            "heading": "Press",
+            "text": "One button. It heats and pulls the shot on its own."
+          }
+        },
+        "s3": {
+          "type": "step",
+          "settings": {
+            "heading": "Rinse",
+            "text": "Water, one pulse, tip it out. Ready for tomorrow."
+          }
+        }
+      },
+      "block_order": [
+        "s1",
+        "s2",
+        "s3"
+      ],
+      "settings": {
+        "band": "band--page",
+        "kicker": "How it works",
+        "heading": "Three moves to a real shot"
+      }
+    },
+    "quote": {
+      "type": "pull-quote",
+      "settings": {
+        "band": "band--surface",
+        "rating": 5,
+        "quote": "I did not expect crema out of something this small. It is a proper shot.",
+        "attribution": "Marta K. — verified buyer"
+      }
+    },
+    "reviews": {
+      "type": "testimonials",
+      "blocks": {
+        "q1": {
+          "type": "quote",
+          "settings": {
+            "rating": 5,
+            "quote": "Lives in my van. Two years of bad site coffee solved in one purchase.",
+            "name": "Devon R.",
+            "detail": "Verified buyer"
+          }
+        },
+        "q2": {
+          "type": "quote",
+          "settings": {
+            "rating": 5,
+            "quote": "The ten second rinse is not marketing. That is genuinely all it takes.",
+            "name": "Priya S.",
+            "detail": "Verified buyer"
+          }
+        },
+        "q3": {
+          "type": "quote",
+          "settings": {
+            "rating": 5,
+            "quote": "Took it up a mountain and it outperformed the cafe at the bottom.",
+            "name": "Tomas L.",
+            "detail": "Verified buyer"
+          }
+        },
+        "q4": {
+          "type": "quote",
+          "settings": {
+            "rating": 5,
+            "quote": "Packed it for a fortnight in Portugal and never once looked for a cafe.",
+            "name": "Anneke V.",
+            "detail": "Verified buyer"
+          }
+        }
+      },
+      "block_order": [
+        "q1",
+        "q2",
+        "q3",
+        "q4"
+      ],
+      "settings": {
+        "band": "band--surface",
+        "kicker": "",
+        "heading": "More from buyers",
+        "summary": ""
+      }
+    },
+    "faq": {
+      "type": "faq",
+      "blocks": {
+        "a1": {
+          "type": "item",
+          "settings": {
+            "question": "Does it need an outlet?",
+            "answer": "<p>No. It charges over USB-C and holds roughly twenty shots, so a weekend away needs no plug at all.</p>"
+          }
+        },
+        "a2": {
+          "type": "item",
+          "settings": {
+            "question": "Ground coffee or capsules?",
+            "answer": "<p>Both. The basket takes about eight grams of ground coffee, and a capsule adapter is included.</p>"
+          }
+        },
+        "a3": {
+          "type": "item",
+          "settings": {
+            "question": "Can I take it on a plane?",
+            "answer": "<p>Yes. There is no pressurised canister and the battery sits under the 100 Wh cabin limit.</p>"
+          }
+        },
+        "a4": {
+          "type": "item",
+          "settings": {
+            "question": "How do I clean it?",
+            "answer": "<p>Add water, run one pulse and tip it out. Once a month, run a descaling cycle with the tablet provided.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "a1",
+        "a2",
+        "a3",
+        "a4"
+      ],
+      "settings": {
+        "band": "band--page",
+        "kicker": "Questions",
+        "heading": "Before you buy",
+        "open_first": true
+      }
+    },
+    "closing": {
+      "type": "cta-banner",
+      "settings": {
+        "band": "band--brand-2",
+        "kicker": "Raybelle",
+        "heading": "Coffee worth carrying",
+        "body": "<p>Free shipping over 50. Thirty days to change your mind.</p>",
+        "cta_label": "Add to cart",
+        "show_price": true,
+        "reassurance": "Two-year warranty, replaceable battery"
+      }
+    },
+    "buybar": {
+      "type": "sticky-buy-bar",
+      "settings": {
+        "bar_label": "Add to cart",
+        "show_title": true,
+        "show_image": true,
+        "demo_asset": "product-machine.jpg",
+        "reveal_after": 600,
+        "visibility": "mobile"
+      }
+    }
+  },
+  "order": [
+    "hero",
+    "ticker",
+    "specs",
+    "gallery",
+    "features",
+    "statement",
+    "how_it_works",
+    "quote",
+    "reviews",
+    "faq",
+    "closing",
+    "buybar"
+  ]
+}
