@@ -54,25 +54,63 @@
         {% else %}
           {{ 'product-1' | placeholder_svg_tag: 'pdp__img' }}
         {% endif %}
+
+        {% comment %}
+          Image counter on stage. One per image; CSS shows only the active one.
+        {% endcomment %}
+        {% if product.images.size > 1 %}
+          {% assign shot_count = product.images.size | at_most: 8 %}
+          {% for image in product.images limit: 8 %}
+            <span class="pdp__count" aria-hidden="true">
+              {{ forloop.index | prepend: '0' }} / {{ shot_count | prepend: '0' }}
+            </span>
+          {% endfor %}
+        {% endif %}
       </div>
 
       {% if product.images.size > 1 %}
-        <ul class="pdp__thumbs">
+        {% assign shot_count = product.images.size | at_most: 8 %}
+        <div class="pdp__nav-row">
           {% for image in product.images limit: 8 %}
-            <li>
-              <label class="pdp__thumb" for="pdp-shot-{{ section.id }}-{{ forloop.index }}">
-                {{
-                  image
-                  | image_url: width: 200
-                  | image_tag: class: 'pdp__thumb-img', widths: '100,200', sizes: '72px', loading: 'lazy', alt: ''
-                }}
-                <span class="visually-hidden">
-                  {{ 'product.view_image' | t: index: forloop.index }}
-                </span>
+            {% liquid
+              assign prev_i = forloop.index0 | minus: 1
+              if prev_i < 0
+                assign prev_i = shot_count | minus: 1
+              endif
+              assign prev_i = prev_i | plus: 1
+              assign next_i = forloop.index | modulo: shot_count | plus: 1
+            %}
+            <div class="pdp__nav">
+              <label class="pdp__arrow pdp__arrow--prev" for="pdp-shot-{{ section.id }}-{{ prev_i }}">
+                {% render 'icon', name: 'chevron-left' %}
+                <span class="visually-hidden">{{ 'product.view_image' | t: index: prev_i }}</span>
               </label>
-            </li>
+              <label class="pdp__arrow pdp__arrow--next" for="pdp-shot-{{ section.id }}-{{ next_i }}">
+                {% render 'icon', name: 'chevron-right' %}
+                <span class="visually-hidden">{{ 'product.view_image' | t: index: next_i }}</span>
+              </label>
+            </div>
           {% endfor %}
-        </ul>
+
+          <nav class="pdp__nav-group" aria-label="{{ 'product.view_image' | t: index: 1 }}">
+            <ul class="pdp__thumbs">
+              {% for image in product.images limit: 8 %}
+                <li>
+                  <label class="pdp__thumb" for="pdp-shot-{{ section.id }}-{{ forloop.index }}">
+                    {{
+                      image
+                      | image_url: width: 200
+                      | image_tag: class: 'pdp__thumb-img', widths: '100,200', sizes: '72px', loading: 'lazy', alt: ''
+                    }}
+                    <span class="visually-hidden">
+                      {{ 'product.view_image' | t: index: forloop.index }}
+                    </span>
+                  </label>
+                </li>
+              {% endfor %}
+            </ul>
+          </nav>
+        </div>
       {% endif %}
     </div>
 
@@ -269,12 +307,18 @@
     display: grid;
     gap: var(--space-4);
     align-content: center;
+    justify-items: center;
   }
 
   .pdp__stage {
+    position: relative;
+    isolation: isolate;
     display: grid;
     aspect-ratio: 3 / 4;
     max-height: 70vh;
+    width: 100%;
+    max-width: min(100%, 560px, calc(70vh * 3 / 4));
+    margin-inline: auto;
   }
 
   .pdp__img {
@@ -303,32 +347,159 @@
     opacity: 1;
   }
 
+  .pdp__count {
+    display: none;
+    position: absolute;
+    inset-block-end: var(--space-3);
+    inset-inline-end: var(--space-3);
+    z-index: 2;
+    background-color: color-mix(in srgb, var(--color-brand-3) 85%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-on-brand-3) 20%, transparent);
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-xs);
+    letter-spacing: 0.16em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-on-brand-3);
+  }
+
+  .pdp__shot-radio:nth-of-type(1):checked ~ .pdp__media .pdp__count:nth-of-type(1),
+  .pdp__shot-radio:nth-of-type(2):checked ~ .pdp__media .pdp__count:nth-of-type(2),
+  .pdp__shot-radio:nth-of-type(3):checked ~ .pdp__media .pdp__count:nth-of-type(3),
+  .pdp__shot-radio:nth-of-type(4):checked ~ .pdp__media .pdp__count:nth-of-type(4),
+  .pdp__shot-radio:nth-of-type(5):checked ~ .pdp__media .pdp__count:nth-of-type(5),
+  .pdp__shot-radio:nth-of-type(6):checked ~ .pdp__media .pdp__count:nth-of-type(6),
+  .pdp__shot-radio:nth-of-type(7):checked ~ .pdp__media .pdp__count:nth-of-type(7),
+  .pdp__shot-radio:nth-of-type(8):checked ~ .pdp__media .pdp__count:nth-of-type(8) {
+    display: block;
+  }
+
+  /* Nav row: container with prev/next buttons outside and white nav group in the center */
+  .pdp__nav-row {
+    position: relative;
+    z-index: 2;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: min(100%, 560px, calc(70vh * 3 / 4));
+    margin-inline: auto;
+    padding-inline: 48px;
+  }
+
+  .pdp__nav {
+    display: none;
+    position: absolute;
+    inset-inline: 0;
+    inset-block: 0;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .pdp__shot-radio:nth-of-type(1):checked ~ .pdp__media .pdp__nav:nth-of-type(1),
+  .pdp__shot-radio:nth-of-type(2):checked ~ .pdp__media .pdp__nav:nth-of-type(2),
+  .pdp__shot-radio:nth-of-type(3):checked ~ .pdp__media .pdp__nav:nth-of-type(3),
+  .pdp__shot-radio:nth-of-type(4):checked ~ .pdp__media .pdp__nav:nth-of-type(4),
+  .pdp__shot-radio:nth-of-type(5):checked ~ .pdp__media .pdp__nav:nth-of-type(5),
+  .pdp__shot-radio:nth-of-type(6):checked ~ .pdp__media .pdp__nav:nth-of-type(6),
+  .pdp__shot-radio:nth-of-type(7):checked ~ .pdp__media .pdp__nav:nth-of-type(7),
+  .pdp__shot-radio:nth-of-type(8):checked ~ .pdp__media .pdp__nav:nth-of-type(8) {
+    display: flex;
+  }
+
+  .pdp__arrow {
+    pointer-events: auto;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--color-on-brand-3);
+    background-color: color-mix(in srgb, var(--color-brand-3) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-on-brand-3) 25%, transparent);
+    transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  }
+
+  .pdp__arrow:hover {
+    background-color: var(--color-brand-3);
+    border-color: var(--color-on-brand-3);
+  }
+
+  .pdp__arrow svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Nav group: wide white background enclosing thumbnail images */
+  .pdp__nav-group {
+    background-color: #ffffff;
+    border: 1px solid color-mix(in srgb, var(--color-on-brand-3) 14%, transparent);
+    border-radius: var(--style-border-radius-inputs, 6px);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--color-on-brand-3) 6%, transparent);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-3);
+    overflow: hidden;
+  }
+
+  /* Thumbnails: single line without wrapping */
   .pdp__thumbs {
     display: flex;
-    flex-wrap: wrap;
     justify-content: center;
-    gap: var(--space-2);
-    margin: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
     padding: 0;
+    margin: 0;
+    gap: var(--space-2);
     list-style: none;
+    width: 100%;
+  }
+
+  .pdp__thumbs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pdp__thumbs li {
+    flex: 0 0 auto;
+    width: clamp(48px, 9vw, 64px);
   }
 
   .pdp__thumb {
     display: block;
-    width: 72px;
+    position: relative;
     aspect-ratio: 1;
     cursor: pointer;
-    border: 1px solid transparent;
-    transition: border-color var(--dur-fast) var(--ease-out);
+    padding-block-end: 6px;
+    opacity: 0.55;
+    transition: opacity var(--dur-fast) var(--ease-out);
+  }
+
+  .pdp__thumb::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    height: 2px;
+    background-color: var(--color-accent, var(--color-brand-1));
+    transform: scaleX(0);
+    transition: transform var(--dur-base) var(--ease-out);
   }
 
   .pdp__thumb:hover {
-    border-color: var(--color-on-brand-3);
+    opacity: 0.85;
   }
 
   .pdp__thumb-img {
     width: 100%;
-    height: 100%;
+    height: calc(100% - 6px);
     object-fit: contain;
     mix-blend-mode: multiply;
   }
@@ -341,7 +512,18 @@
   .pdp__shot-radio:nth-of-type(6):checked ~ .pdp__media .pdp__thumbs li:nth-child(6) .pdp__thumb,
   .pdp__shot-radio:nth-of-type(7):checked ~ .pdp__media .pdp__thumbs li:nth-child(7) .pdp__thumb,
   .pdp__shot-radio:nth-of-type(8):checked ~ .pdp__media .pdp__thumbs li:nth-child(8) .pdp__thumb {
-    border-color: var(--color-on-brand-3);
+    opacity: 1;
+  }
+
+  .pdp__shot-radio:nth-of-type(1):checked ~ .pdp__media .pdp__thumbs li:nth-child(1) .pdp__thumb::after,
+  .pdp__shot-radio:nth-of-type(2):checked ~ .pdp__media .pdp__thumbs li:nth-child(2) .pdp__thumb::after,
+  .pdp__shot-radio:nth-of-type(3):checked ~ .pdp__media .pdp__thumbs li:nth-child(3) .pdp__thumb::after,
+  .pdp__shot-radio:nth-of-type(4):checked ~ .pdp__media .pdp__thumbs li:nth-child(4) .pdp__thumb::after,
+  .pdp__shot-radio:nth-of-type(5):checked ~ .pdp__media .pdp__thumbs li:nth-child(5) .pdp__thumb::after,
+  .pdp__shot-radio:nth-of-type(6):checked ~ .pdp__media .pdp__thumbs li:nth-child(6) .pdp__thumb::after,
+  .pdp__shot-radio:nth-of-type(7):checked ~ .pdp__media .pdp__thumbs li:nth-child(7) .pdp__thumb::after,
+  .pdp__shot-radio:nth-of-type(8):checked ~ .pdp__media .pdp__thumbs li:nth-child(8) .pdp__thumb::after {
+    transform: scaleX(1);
   }
 
   .pdp__shot-radio:focus-visible ~ .pdp__media .pdp__thumbs .pdp__thumb {

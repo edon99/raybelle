@@ -187,6 +187,12 @@
             | image_tag: class: 'hero__img', widths: '480,720,1000,1200', sizes: '(min-width: 900px) 48vw, 100vw', loading: 'eager', fetchpriority: 'high'
           }}
         {% endfor %}
+      {% elsif product.featured_image != blank %}
+        {{
+          product.featured_image
+          | image_url: width: 1200
+          | image_tag: class: 'hero__img', widths: '480,720,1000,1200', sizes: '(min-width: 900px) 48vw, 100vw', loading: 'eager', fetchpriority: 'high'
+        }}
       {% elsif section.settings.demo_asset != blank %}
         {% comment %} Bundled demo asset — see assets/DEMO-IMAGES.txt {% endcomment %}
         <img
@@ -198,7 +204,14 @@
           fetchpriority="high"
         >
       {% else %}
-        {{ 'product-1' | placeholder_svg_tag: 'hero__img' }}
+        <img
+          class="hero__img"
+          src="{{ 'product-machine.jpg' | asset_url }}"
+          alt="{{ heading | escape }}"
+          width="900"
+          height="1125"
+          fetchpriority="high"
+        >
       {% endif %}
     </div>
   </div>
@@ -223,11 +236,7 @@
     flex-direction: column;
     justify-content: center;
     padding-block: calc(var(--section-rhythm) * 0.7);
-    /* Keeps the copy on the container inset while the media bleeds. */
-    padding-inline-start: max(
-      var(--page-margin),
-      calc((100vw - var(--page-width)) / 2 + var(--page-margin))
-    );
+    padding-inline-start: clamp(var(--page-margin), 4vw, 56px);
     padding-inline-end: var(--page-margin);
   }
 
@@ -314,7 +323,8 @@
     position: relative;
     display: grid;
     place-items: center;
-    min-height: clamp(360px, 52vw, 660px);
+    height: 100%;
+    min-height: clamp(260px, 34vw, 440px);
     background-color: var(--color-brand-3);
   }
 
@@ -326,15 +336,19 @@
     grid-area: 1 / 1;
     width: 100%;
     height: 100%;
+    max-height: 580px;
+    max-width: min(100%, 560px);
+    margin: auto;
     object-fit: contain;
-    padding: 7% 12%;
+    padding: 3% 4%;
     mix-blend-mode: multiply;
     opacity: 0;
     transition: opacity var(--dur-slow) var(--ease-out);
   }
 
-  /* One shot and no swatches: nothing drives the opacity, so show it. */
-  .hero__media > .hero__img:only-of-type {
+  /* By default (or when only one image / swatches not active), the first image is visible. */
+  .hero__media > .hero__img:only-of-type,
+  .hero__media > .hero__img:first-of-type {
     opacity: 1;
   }
 
@@ -448,6 +462,7 @@
     flex-wrap: wrap;
     align-items: stretch;
     gap: var(--space-3);
+    width: 50%;
   }
 
   .hero__cta,
@@ -499,6 +514,19 @@
   }
 
   /*
+   * Hide the default first image when another variant radio is checked.
+   */
+  .hero__radio:nth-of-type(2):checked ~ .hero__media .hero__img:nth-of-type(1),
+  .hero__radio:nth-of-type(3):checked ~ .hero__media .hero__img:nth-of-type(1),
+  .hero__radio:nth-of-type(4):checked ~ .hero__media .hero__img:nth-of-type(1),
+  .hero__radio:nth-of-type(5):checked ~ .hero__media .hero__img:nth-of-type(1),
+  .hero__radio:nth-of-type(6):checked ~ .hero__media .hero__img:nth-of-type(1),
+  .hero__radio:nth-of-type(7):checked ~ .hero__media .hero__img:nth-of-type(1),
+  .hero__radio:nth-of-type(8):checked ~ .hero__media .hero__img:nth-of-type(1) {
+    opacity: 0;
+  }
+
+  /*
    * One static rule per swatch index, up to the eight-variant limit the markup
    * enforces. Liquid is not evaluated inside a stylesheet tag, so this set
    * cannot be generated.
@@ -543,12 +571,13 @@
 
   @media (min-width: 900px) {
     .hero__grid {
-      grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
       align-items: stretch;
     }
 
     .hero__copy {
-      padding-inline-end: clamp(32px, 4vw, 72px);
+      padding-inline-start: clamp(var(--page-margin), 4.5vw, 64px);
+      padding-inline-end: clamp(48px, 6vw, 96px);
     }
   }
 {% endstylesheet %}

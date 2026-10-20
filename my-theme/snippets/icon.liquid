@@ -8,7 +8,7 @@
   sit next to a text label. Pass `label` only when the icon is the sole content
   of a control, which promotes it to `role="img"` with an accessible name.
 
-  @param {string} name - Icon key. One of: bolt, battery, clock, leaf, droplet, cup, sparkle, check, star, arrow-right, shield, globe
+  @param {string} name - Icon key. One of: bolt, battery, clock, leaf, droplet, cup, sparkle, check, star, arrow-right, chevron-left, chevron-right, shield, globe
   @param {string} [label] - Accessible name. Omit for decorative icons.
   @param {number} [size] - Pixel size of the square viewport. Defaults to 24.
   @param {string} [class] - Extra classes for the svg element.
@@ -75,6 +75,10 @@
     {% when 'arrow-right' %}
       <path d="M4 12h15" />
       <path d="m13 6 6 6-6 6" />
+    {% when 'chevron-left' %}
+      <path d="m15 6-6 6 6 6" />
+    {% when 'chevron-right' %}
+      <path d="m9 6 6 6-6 6" />
     {% when 'shield' %}
       <path d="M12 3l8 3v6c0 4.5-3.2 8.3-8 9-4.8-.7-8-4.5-8-9V6l8-3Z" />
       <path d="m9 12 2 2 4-4" />
